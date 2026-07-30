@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://b0o75fl3i6b1f"]
+
+[ext_resource type="Texture2D" uid="uid://d3gbd5a785g7j" path="res://Assest/hitman1_silencer.png" id="1_xhfnw"]
+
+[sub_resource type="GDScript" id="GDScript_rpqav"]
+script/source = "extends CharacterBody2D
+
+
+const SPEED = 300.0
+const JUMP_VELOCITY = -400.0
+
+
+func _physics_process(delta: float) -> void:
+	# Add the gravity.
+	if not is_on_floor():
+		velocity += get_gravity() * delta
+
+	# Handle jump.
+	if Input.is_action_just_pressed(\"ui_accept\") and is_on_floor():
+		velocity.y = JUMP_VELOCITY
+
+	# Get the input direction and handle the movement/deceleration.
+	# As good practice, you should replace UI actions with custom gameplay actions.
+	var direction := Input.get_axis(\"ui_left\", \"ui_right\")
+	if direction:
+		velocity.x = direction * SPEED
+	else:
+		velocity.x = move_toward(velocity.x, 0, SPEED)
+
+	move_and_slide()
+"
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_sbqex"]
+size = Vector2(50, 64)
+
+[node name="Node2D" type="Node2D" unique_id=306756518]
+
+[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=743168237]
+position = Vector2(52, 35)
+script = SubResource("GDScript_rpqav")
+
+[node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D" unique_id=426385014]
+position = Vector2(84, 70)
+scale = Vector2(1.5, 1.5)
+texture = ExtResource("1_xhfnw")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D" unique_id=578950653]
+position = Vector2(71, 70)
+shape = SubResource("RectangleShape2D_sbqex")
