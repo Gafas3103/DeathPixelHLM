@@ -3,6 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://xjmvhq01aeo4" path="res://Assest/hitman1_hold.png" id="1_dwdkg"]
 [ext_resource type="Script" uid="uid://d1rk30cqvhtk6" path="res://Scripts/HoldMovement.gd" id="1_va0f5"]
 
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_sbqex"]
 size = Vector2(44.41135, 5.8963823)
 
