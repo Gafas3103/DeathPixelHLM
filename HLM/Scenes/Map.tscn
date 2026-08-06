@@ -68,7 +68,6 @@ tile_map_data = PackedByteArray("AADi/y0AAQABAAEAAADj/y0AAQABAAEAAADk/y0AAQABAAE
 tile_set = SubResource("TileSet_ticvn")
 
 [node name="GuiaMapa2" type="Sprite2D" parent="Tailsets" unique_id=19304398]
-visible = false
 modulate = Color(1.8989718, 1.8989718, 1.8989718, 0.31764707)
 position = Vector2(-2, 1.0000076)
 scale = Vector2(8.823827, 9.622051)
