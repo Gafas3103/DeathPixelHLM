@@ -6,6 +6,7 @@ signal ammo_changed(new_ammo)
 signal lives_changed(new_lives)
 signal character_swapped(active_char_id)
 signal player_died
+signal player_respawned
 
 # VARIABLES DE ESTADO DEL JUGADOR
 var max_health: float = 100.0
