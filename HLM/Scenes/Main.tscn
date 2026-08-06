@@ -17,3 +17,4 @@ position = Vector2(149.99998, 197.99998)
 position = Vector2(77, 25)
 
 [node name="HUD" parent="." instance=ExtResource("3_hud")]
+

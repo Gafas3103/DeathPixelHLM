@@ -45,13 +45,8 @@ func _physics_process(delta):
 		if Input.is_key_pressed(KEY_R) and Global.health > 0:
 			Global.reload()
 
-		# Movimiento WASD
-		var direction = Vector2.ZERO
-		if Input.is_action_pressed("move_up"):
-			direction = transform.x
-		elif Input.is_action_pressed("move_down"):
-			direction = -transform.x
-
+		# Movimiento 4-direccional del mapa acomodado
+		var direction = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 		velocity = direction * speed
 	else:
 		velocity = Vector2.ZERO 
