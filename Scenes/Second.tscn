@@ -1,0 +1,72 @@
+[gd_scene format=3 uid="uid://hwg774aue88k"]
+
+[ext_resource type="Script" uid="uid://d1rk30cqvhtk6" path="res://Scripts/HoldMovement.gd" id="1_va0f5"]
+[ext_resource type="Texture2D" uid="uid://c5frqxm6wqv87" path="res://Assest/Player2/Swat2Stop.png" id="2_va0f5"]
+[ext_resource type="Texture2D" uid="uid://bxnmrkjasuiwn" path="res://Assest/Player2/Swat2Attack.png" id="3_niwmv"]
+[ext_resource type="Texture2D" uid="uid://benuv5wmfi4j3" path="res://Assest/Player2/Swat2Dead.png" id="4_rwyyl"]
+[ext_resource type="Texture2D" uid="uid://dhqj6o2epcnu5" path="res://Assest/Player2/Swat2Move2.png" id="5_2g1me"]
+[ext_resource type="Texture2D" uid="uid://c51nttnfqgvre" path="res://Assest/Player2/Swat2Move3.png" id="6_aky8r"]
+[ext_resource type="Texture2D" uid="uid://dd0u40v8rdx2b" path="res://Assest/Player2/Swat2Move.png" id="7_5sri0"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_sbqex"]
+size = Vector2(77.006454, 6.6720176)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_6cvi3"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_niwmv")
+}],
+"loop": 1,
+"name": &"Attack",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_rwyyl")
+}],
+"loop": 1,
+"name": &"Dead",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_va0f5")
+}],
+"loop": 1,
+"name": &"Stop",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_aky8r")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_2g1me")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_5sri0")
+}],
+"loop": 1,
+"name": &"Walk",
+"speed": 5.0
+}]
+
+[node name="CharacterBody2D" type="CharacterBody2D" unique_id=1399873289]
+position = Vector2(80, 255)
+rotation = -1.5600598
+script = ExtResource("1_va0f5")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1235699500]
+position = Vector2(-0.01184082, -1.0026245)
+rotation = -0.008975012
+scale = Vector2(1.1483558, 11.023714)
+shape = SubResource("RectangleShape2D_sbqex")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1066028067]
+position = Vector2(-0.01386562, -0.8319741)
+rotation = -1.582135
+scale = Vector2(0.29355, 0.24945933)
+sprite_frames = SubResource("SpriteFrames_6cvi3")
+animation = &"Walk"
+frame_progress = 0.043408204

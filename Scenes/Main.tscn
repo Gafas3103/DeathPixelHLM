@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://lhfv2v85uxsv"]
+
+[ext_resource type="PackedScene" uid="uid://2jn012ug35uk" path="res://Scenes/Mapa.tscn" id="1_idj7w"]
+[ext_resource type="PackedScene" uid="uid://b0o75fl3i6b1f" path="res://Scenes/Player.tscn" id="2_kln2b"]
+[ext_resource type="PackedScene" uid="uid://hwg774aue88k" path="res://Scenes/Second.tscn" id="2_rgh2o"]
+[ext_resource type="PackedScene" uid="uid://wjsh3rttm2rt" path="res://Scenes/Enemy.tscn" id="4_rgh2o"]
+
+[node name="Main" type="Node2D" unique_id=1782460867]
+
+[node name="Mapa" parent="." unique_id=599430471 instance=ExtResource("1_idj7w")]
+position = Vector2(-14, -21)
+
+[node name="Holding" parent="." unique_id=2128514845 instance=ExtResource("2_rgh2o")]
+position = Vector2(161, 208)
+rotation = -0.0029233454
+
+[node name="Node2D" parent="." unique_id=306756518 instance=ExtResource("2_kln2b")]
+position = Vector2(152, 134)
+
+[node name="CharacterBody2D" parent="." unique_id=1226710034 instance=ExtResource("4_rgh2o")]
+position = Vector2(415, 125)

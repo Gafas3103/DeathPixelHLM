@@ -1,0 +1,64 @@
+[gd_scene format=3 uid="uid://wjsh3rttm2rt"]
+
+[ext_resource type="Script" uid="uid://bk70wvwenhesy" path="res://Scripts/Enemy/enemy.gd" id="1_wovta"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_wovta"]
+animations = [{
+"frames": [],
+"loop": 1,
+"name": &"Attack",
+"speed": 5.0
+}, {
+"frames": [],
+"loop": 1,
+"name": &"Dead",
+"speed": 5.0
+}, {
+"frames": [],
+"loop": 1,
+"name": &"Stop",
+"speed": 5.0
+}, {
+"frames": [],
+"loop": 1,
+"name": &"Walk",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6w11f"]
+size = Vector2(58, 67)
+
+[node name="CharacterBody2D" type="CharacterBody2D" unique_id=1226710034]
+position = Vector2(275, 139)
+script = ExtResource("1_wovta")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=121361416]
+position = Vector2(0, 8.493662e-06)
+scale = Vector2(0.25438613, 0.2446043)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=919671188]
+position = Vector2(-2.5510788e-05, -1.9073486e-06)
+scale = Vector2(0.23015885, 0.2115385)
+sprite_frames = SubResource("SpriteFrames_wovta")
+animation = &"Walk"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1264874007]
+shape = SubResource("RectangleShape2D_6w11f")
+
+[node name="VisionArea" type="Area2D" parent="." unique_id=881434148]
+position = Vector2(1, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="VisionArea" unique_id=1913589082]
+
+[node name="VisionRay" type="RayCast2D" parent="." unique_id=1177305364]
+position = Vector2(1, 0)
+
+[node name="HearingArea" type="Area2D" parent="." unique_id=60806486]
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="." unique_id=951515731]
+
+[node name="NavigationAgent2D" type="NavigationAgent2D" parent="." unique_id=1977095715]
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1056645333]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=384565156]

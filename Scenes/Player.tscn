@@ -1,0 +1,104 @@
+[gd_scene format=3 uid="uid://b0o75fl3i6b1f"]
+
+[ext_resource type="Texture2D" uid="uid://84j8mi3chm1y" path="res://Assest/Player1/SwatStop.png" id="1_dewec"]
+[ext_resource type="Texture2D" uid="uid://cw2tft4773kx1" path="res://Assest/Player1/SwatAttack.png" id="2_5ixxa"]
+[ext_resource type="Texture2D" uid="uid://cdbcolws80h78" path="res://Assest/Player1/SwatDead.png" id="3_nn08x"]
+[ext_resource type="Texture2D" uid="uid://5lecduuw2iat" path="res://Assest/Player1/SwatMove.png" id="4_nn08x"]
+[ext_resource type="Texture2D" uid="uid://bj8iwf4wb40xr" path="res://Assest/Player1/SwatMove3.png" id="5_52ee3"]
+[ext_resource type="Texture2D" uid="uid://d0jw7qor4ub6x" path="res://Assest/Player1/SwatMove2.png" id="6_bhhdu"]
+
+[sub_resource type="GDScript" id="GDScript_rpqav"]
+script/source = "extends CharacterBody2D
+
+@export var speed: float = 300.0
+@export var is_active: bool = false
+@onready var animated_sprite = $AnimatedSprite2D
+
+func _physics_process(delta):
+	if Input.is_action_just_pressed(\"action\"):
+		is_active = not is_active
+
+	if is_active:
+		look_at(get_global_mouse_position())
+		
+		var direction = Vector2.ZERO
+
+		# Detectar dirección según las teclas presionadas
+		if Input.is_action_pressed(\"move_up\"):
+			direction = transform.x
+		elif Input.is_action_pressed(\"move_down\"):
+			direction = -transform.x
+
+		# Controlar movimiento y animaciones
+		if direction != Vector2.ZERO:
+			velocity = direction * speed
+			animated_sprite.play(\"Walk\")
+			animated_sprite.flip_h = direction.x < 0
+		else:
+			velocity = Vector2.ZERO
+			animated_sprite.play(\"stop\")
+
+		move_and_slide()
+"
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_sbqex"]
+size = Vector2(85.92688, 73.086235)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_6cvi3"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_5ixxa")
+}],
+"loop": 1,
+"name": &"Attack",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_nn08x")
+}],
+"loop": 1,
+"name": &"Dead",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_dewec")
+}],
+"loop": 1,
+"name": &"Stop",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_bhhdu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_52ee3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_nn08x")
+}],
+"loop": 1,
+"name": &"Walk",
+"speed": 5.0
+}]
+
+[node name="CharacterBody2D" type="CharacterBody2D" unique_id=743168237]
+position = Vector2(217, 104)
+rotation = -1.5695361
+script = SubResource("GDScript_rpqav")
+is_active = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=578950653]
+position = Vector2(1.0012589, 0.998744)
+shape = SubResource("RectangleShape2D_sbqex")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=252529366]
+position = Vector2(4.7683716e-07, 6.67572e-06)
+rotation = 4.712389
+scale = Vector2(0.29122773, 0.24483769)
+sprite_frames = SubResource("SpriteFrames_6cvi3")
+animation = &"Walk"
+frame_progress = 0.25873733
