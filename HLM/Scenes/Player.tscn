@@ -36,13 +36,11 @@ func _physics_process(delta):
 		look_at(get_global_mouse_position())
 
 		# Sistema de disparo simple: Click Izquierdo
-		if Input.is_action_just_pressed(\"shoot\") or Input.is_button_pressed(MOUSE_BUTTON_LEFT):
-			# Solo disparamos una bala a la vez en cada frame que presionamos
-			if Input.is_action_just_pressed(\"shoot\"):
-				if Global.use_ammo():
-					print(\"¡Disparo! Balas restantes: \", Global.ammo)
-				else:
-					print(\"¡Sin balas! Recarga reapareciendo o en el HUD\")
+		if Input.is_action_just_pressed(\"shoot\"):
+			if Global.use_ammo():
+				print(\"¡Disparo! Balas restantes: \", Global.ammo)
+			else:
+				print(\"¡Sin balas! Recarga reapareciendo o en el HUD\")
 
 		# CONTROLES DE PRUEBA UNIVERSITARIOS:
 		# Mantener presionado J para recibir daño
@@ -80,16 +78,15 @@ size = Vector2(50, 64)
 [node name="Node2D" type="Node2D" unique_id=306756518]
 
 [node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=743168237]
-position = Vector2(97, 192.00002)
-rotation = -1.5695361
+position = Vector2(181, 262)
 script = SubResource("GDScript_rpqav")
 is_active = true
 
 [node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D" unique_id=426385014]
-position = Vector2(84, 70)
+position = Vector2(0, 0)
 scale = Vector2(1.5, 1.5)
 texture = ExtResource("1_xhfnw")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D" unique_id=578950653]
-position = Vector2(71, 70)
+position = Vector2(0, 0)
 shape = SubResource("RectangleShape2D_sbqex")

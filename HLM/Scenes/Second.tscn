@@ -10,16 +10,15 @@ size = Vector2(44.41135, 5.8963823)
 scale = Vector2(1.006357, 0.97248584)
 
 [node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=1399873289]
-position = Vector2(4, 11)
-rotation = -1.5600598
+position = Vector2(55, 56)
 script = ExtResource("1_va0f5")
 
 [node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D" unique_id=1238011605]
-position = Vector2(51, 45)
+position = Vector2(0, 0)
 scale = Vector2(1.5, 1.5)
 texture = ExtResource("1_dwdkg")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D" unique_id=1235699500]
-position = Vector2(51.5, 44.499996)
+position = Vector2(0, 0)
 scale = Vector2(1.1483551, 11.023711)
 shape = SubResource("RectangleShape2D_sbqex")
