@@ -3,21 +3,35 @@
 [ext_resource type="Texture2D" uid="uid://xjmvhq01aeo4" path="res://Assest/hitman1_hold.png" id="1_dwdkg"]
 [ext_resource type="Script" uid="uid://d1rk30cqvhtk6" path="res://Scripts/HoldMovement.gd" id="1_va0f5"]
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_sbqex"]
+radius = 24.0
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_sbqex"]
-size = Vector2(44.41135, 5.8963823)
+[node name="Holding" type="Node2D"]
 
-[node name="Holding" type="Node2D" unique_id=2128514845]
-scale = Vector2(1.006357, 0.97248584)
-
-[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=1399873289]
-rotation = -1.5600598
+[node name="CharacterBody2D" type="CharacterBody2D" parent="."]
+position = Vector2(55, 56)
+collision_layer = 2
+collision_mask = 5
+motion_mode = 1
 script = ExtResource("1_va0f5")
+speed = 300.0
+character_id = 1
+is_active = false
 
-[node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D" unique_id=1238011605]
+[node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D"]
+position = Vector2(0, 0)
 scale = Vector2(1.5, 1.5)
 texture = ExtResource("1_dwdkg")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D" unique_id=1235699500]
-scale = Vector2(1.1483551, 11.023711)
-shape = SubResource("RectangleShape2D_sbqex")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D"]
+position = Vector2(0, 0)
+shape = SubResource("CircleShape2D_sbqex")
+
+[node name="Muzzle" type="Marker2D" parent="CharacterBody2D"]
+position = Vector2(30, 0)
+
+[node name="Camera2D" type="Camera2D" parent="CharacterBody2D"]
+enabled = false
+zoom = Vector2(2, 2)
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0
