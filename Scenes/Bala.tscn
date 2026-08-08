@@ -1,21 +1,21 @@
-[gd_scene format=3 uid="uid://c0now2cdecl2h"]
+[gd_scene load_steps=4 format=3 uid="uid://c0now2cdecl2h"]
 
 [ext_resource type="Script" uid="uid://gju3s7g7tk25" path="res://Scripts/bala.gd" id="1_et1n4"]
 [ext_resource type="Texture2D" uid="uid://bjnvd7ceqojxw" path="res://Assest/bullets/08.png" id="2_3tbbd"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_uxa2c"]
 radius = 5.0
-height = 22.0
+height = 18.0
 
-[node name="Bala" type="Area2D"]
+[node name="Bala" type="Area2D" unique_id=1579370702]
 collision_layer = 8
 collision_mask = 5
 script = ExtResource("1_et1n4")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1632682952]
+scale = Vector2(0.18, 0.18)
+texture = ExtResource("2_3tbbd")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=243811325]
 rotation = 1.5707964
 shape = SubResource("CapsuleShape2D_uxa2c")
-
-[node name="Sprite2D" type="Sprite2D" parent="."]
-scale = Vector2(0.2, 0.2)
-texture = ExtResource("2_3tbbd")
