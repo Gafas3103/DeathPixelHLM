@@ -21,7 +21,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("6_dead")
 }],
-"loop": false,
+"loop": 0,
 "name": &"Dead",
 "speed": 1.0
 }, {
@@ -29,7 +29,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("3_stop")
 }],
-"loop": true,
+"loop": 1,
 "name": &"Stop",
 "speed": 5.0
 }, {
@@ -40,7 +40,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("3_stop")
 }],
-"loop": true,
+"loop": 1,
 "name": &"Walk",
 "speed": 8.0
 }]
@@ -69,7 +69,7 @@ scale = Vector2(0.25438613, 0.2446043)
 position = Vector2(0, 0)
 scale = Vector2(0.23015885, 0.2115385)
 sprite_frames = SubResource("SpriteFrames_wovta")
-animation = &"Stop"
+animation = &"Attack"
 autoplay = "Stop"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1264874007]
