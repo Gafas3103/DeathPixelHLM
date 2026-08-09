@@ -12,7 +12,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("2_attack")
 }],
-"loop": true,
+"loop": 1,
 "name": &"Attack",
 "speed": 5.0
 }, {
@@ -20,7 +20,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("3_dead")
 }],
-"loop": false,
+"loop": 0,
 "name": &"Dead",
 "speed": 5.0
 }, {
@@ -28,7 +28,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("4_stop")
 }],
-"loop": true,
+"loop": 1,
 "name": &"Stop",
 "speed": 5.0
 }, {
@@ -36,32 +36,34 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("5_walk")
 }],
-"loop": true,
+"loop": 1,
 "name": &"Walk",
 "speed": 5.0
 }]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_6w11f"]
-radius = 26.0
+radius = 45.17743
 
-[node name="Enemy" type="CharacterBody2D"]
+[node name="Enemy" type="CharacterBody2D" unique_id=1003362613]
 collision_layer = 4
 collision_mask = 3
 motion_mode = 1
 script = ExtResource("1_wovta")
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-scale = Vector2(0.23, 0.23)
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=2022926633]
+position = Vector2(13.500001, 17.499996)
+scale = Vector2(0.284, 0.23142855)
 sprite_frames = SubResource("SpriteFrames_wovta")
-animation = &"Stop"
+animation = &"Attack"
 autoplay = "Stop"
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2098712501]
+position = Vector2(16, 16)
 shape = SubResource("CircleShape2D_6w11f")
 
-[node name="Muzzle" type="Marker2D" parent="."]
+[node name="Muzzle" type="Marker2D" parent="." unique_id=1927986427]
 position = Vector2(34, 0)
 
-[node name="VisionRay" type="RayCast2D" parent="."]
+[node name="VisionRay" type="RayCast2D" parent="." unique_id=1936945958]
 target_position = Vector2(340, 0)
 collision_mask = 3
