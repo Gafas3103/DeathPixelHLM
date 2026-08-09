@@ -6,26 +6,34 @@
 [ext_resource type="PackedScene" uid="uid://chudhudhudhud" path="res://Scenes/HUD.tscn" id="3_hud"]
 [ext_resource type="PackedScene" uid="uid://wjsh3rttm2rt" path="res://Scenes/Enemy.tscn" id="4_enemy"]
 
-[node name="Main" type="Node2D" unique_id=1126179646]
+[node name="Main" type="Node2D" unique_id=1782460867]
 
-[node name="Map" parent="." unique_id=966074929 instance=ExtResource("1_pbw6q")]
-position = Vector2(289, 275)
+[node name="Map" parent="." unique_id=599430471 instance=ExtResource("1_idj7w")]
+position = Vector2(0, 0)
 
-[node name="Holding" parent="." unique_id=112960831 instance=ExtResource("2_rgh2o")]
+[node name="Holding" parent="." unique_id=2128514845 instance=ExtResource("2_rgh2o")]
 position = Vector2(149.99998, 197.99998)
 
-[node name="Node2D" parent="." unique_id=47340219 instance=ExtResource("2_kln2b")]
+[node name="Node2D" parent="." unique_id=306756518 instance=ExtResource("2_kln2b")]
 position = Vector2(77, 25)
 
-[node name="Enemies" type="Node2D" parent="." unique_id=917840554]
-
-[node name="Enemy" parent="Enemies" unique_id=1263616115 instance=ExtResource("4_enemy")]
+[node name="Enemy" parent="." unique_id=1226710034 instance=ExtResource("4_enemy")]
 position = Vector2(400, 300)
+behavior = 1
+patrol_distance = 130.0
+patrol_angle_degrees = 0.0
 
-[node name="Enemy2" parent="Enemies" unique_id=1788111685 instance=ExtResource("4_enemy")]
-position = Vector2(620, 220)
+[node name="EnemyPatrullaVertical" parent="." instance=ExtResource("4_enemy")]
+position = Vector2(720, 420)
+behavior = 1
+patrol_distance = 120.0
+patrol_angle_degrees = 90.0
 
-[node name="Enemy3" parent="Enemies" unique_id=551575017 instance=ExtResource("4_enemy")]
-position = Vector2(300, 520)
+[node name="EnemyTorreta" parent="." instance=ExtResource("4_enemy")]
+position = Vector2(760, 80)
+rotation = 2.3561945
+behavior = 0
+turret_sweep_degrees = 120.0
+turret_sweep_time = 5.0
 
-[node name="HUD" parent="." unique_id=1817380810 instance=ExtResource("3_hud")]
+[node name="HUD" parent="." unique_id=1327612806 instance=ExtResource("3_hud")]

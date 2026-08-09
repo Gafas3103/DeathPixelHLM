@@ -1,31 +1,87 @@
-[gd_scene format=3 uid="uid://b0o75fl3i6b1f"]
+[gd_scene load_steps=12 format=3 uid="uid://b0o75fl3i6b1f"]
 
 [ext_resource type="Script" uid="uid://4ua54socubb4" path="res://Scripts/player.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://d3gbd5a785g7j" path="res://Assest/hitman1_silencer.png" id="2_xhfnw"]
+[ext_resource type="Script" path="res://Scripts/CharacterVisuals.gd" id="2_visuals"]
+[ext_resource type="Texture2D" uid="uid://84j8mi3chm1y" path="res://Assest/Player1/SwatStop.png" id="3_stop"]
+[ext_resource type="Texture2D" uid="uid://5lecduuw2iat" path="res://Assest/Player1/SwatMove.png" id="4_move"]
+[ext_resource type="Texture2D" uid="uid://d0jw7qor4ub6x" path="res://Assest/Player1/SwatMove2.png" id="5_move2"]
+[ext_resource type="Texture2D" uid="uid://bj8iwf4wb40xr" path="res://Assest/Player1/SwatMove3.png" id="6_move3"]
+[ext_resource type="Texture2D" uid="uid://cw2tft4773kx1" path="res://Assest/Player1/SwatAttack.png" id="7_attack"]
+[ext_resource type="Texture2D" uid="uid://cdbcolws80h78" path="res://Assest/Player1/SwatDead.png" id="8_dead"]
+[ext_resource type="Texture2D" uid="uid://d3gbd5a785g7j" path="res://Assest/hitman1_silencer.png" id="9_old"]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_sbqex"]
-radius = 24.0
+[sub_resource type="SpriteFrames" id="SpriteFrames_player1"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("8_dead")
+}],
+"loop": false,
+"name": &"dead",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_stop")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7_attack")
+}],
+"loop": false,
+"name": &"shoot",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_move")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_move2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_move3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_move2")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 11.0
+}]
 
-[node name="Node2D" type="Node2D" unique_id=978445438]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_sbqex"]
+size = Vector2(50, 64)
 
-[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=733691231]
+[node name="Node2D" type="Node2D" unique_id=306756518]
+
+[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=743168237]
 position = Vector2(181, 262)
 collision_layer = 2
 collision_mask = 5
-motion_mode = 1
 script = ExtResource("1_script")
+is_active = true
 
-[node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D" unique_id=627962865]
-scale = Vector2(0.5, 0.5)
-texture = ExtResource("2_xhfnw")
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=913377001]
+scale = Vector2(0.2, 0.2)
+sprite_frames = SubResource("SpriteFrames_player1")
+animation = &"idle"
+autoplay = "idle"
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D" unique_id=900673770]
-shape = SubResource("CircleShape2D_sbqex")
+[node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D" unique_id=426385014]
+visible = false
+position = Vector2(0, 0)
+scale = Vector2(1.5, 1.5)
+texture = ExtResource("9_old")
 
-[node name="Muzzle" type="Marker2D" parent="CharacterBody2D" unique_id=1118313078]
-position = Vector2(36, 0)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D" unique_id=578950653]
+position = Vector2(0, 0)
+shape = SubResource("RectangleShape2D_sbqex")
 
-[node name="Camera2D" type="Camera2D" parent="CharacterBody2D" unique_id=1348544929]
-zoom = Vector2(2, 2)
-position_smoothing_enabled = true
-position_smoothing_speed = 8.0
+[node name="Visuals" type="Node2D" parent="CharacterBody2D" unique_id=913377002]
+script = ExtResource("2_visuals")
+muzzle_offset = Vector2(32, -4)
