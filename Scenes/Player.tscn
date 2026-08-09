@@ -6,31 +6,26 @@
 [sub_resource type="CircleShape2D" id="CircleShape2D_sbqex"]
 radius = 24.0
 
-[node name="Node2D" type="Node2D"]
+[node name="Node2D" type="Node2D" unique_id=978445438]
 
-[node name="CharacterBody2D" type="CharacterBody2D" parent="."]
+[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=733691231]
 position = Vector2(181, 262)
 collision_layer = 2
 collision_mask = 5
 motion_mode = 1
 script = ExtResource("1_script")
-speed = 300.0
-character_id = 0
-is_active = true
 
-[node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D"]
-position = Vector2(0, 0)
-scale = Vector2(1.5, 1.5)
+[node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D" unique_id=627962865]
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("2_xhfnw")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D"]
-position = Vector2(0, 0)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D" unique_id=900673770]
 shape = SubResource("CircleShape2D_sbqex")
 
-[node name="Muzzle" type="Marker2D" parent="CharacterBody2D"]
+[node name="Muzzle" type="Marker2D" parent="CharacterBody2D" unique_id=1118313078]
 position = Vector2(36, 0)
 
-[node name="Camera2D" type="Camera2D" parent="CharacterBody2D"]
+[node name="Camera2D" type="Camera2D" parent="CharacterBody2D" unique_id=1348544929]
 zoom = Vector2(2, 2)
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0
