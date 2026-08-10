@@ -49,12 +49,12 @@ animations = [{
 size = Vector2(19, 23)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_vision"]
-radius = 51.0392
+radius = 340.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_hearing"]
-radius = 77.05842
+radius = 400.0
 
-[node name="CharacterBody2D" type="CharacterBody2D" unique_id=1226710034]
+[node name="CharacterBody2D" type="CharacterBody2D" groups=["Enemies"] unique_id=1226710034]
 position = Vector2(275, 139)
 collision_layer = 4
 collision_mask = 3
@@ -63,7 +63,7 @@ script = ExtResource("1_wovta")
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=121361416]
 visible = false
 position = Vector2(0, 8.493662e-06)
-scale = Vector2(0.25438613, 0.2446043)
+scale = Vector2(0.14, 0.13)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=919671188]
 position = Vector2(1, 2.0000038)

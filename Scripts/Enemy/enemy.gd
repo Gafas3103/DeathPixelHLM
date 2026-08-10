@@ -26,12 +26,12 @@ enum State { PATRULLA, ATACAR, VOLVER, MUERTO }
 # ---------------------------------------------------------------------------
 @export_group("Comportamiento")
 ## Qué tipo de enemigo es. Cambiarlo aquí no requiere tocar código.
-@export var behavior: Behavior = Behavior.PATRULLA
+@export var behavior: Behavior = Behavior.PERSEGUIR
 
 @export_group("Patrulla")
 ## Cuántos píxeles recorre hacia CADA lado desde donde lo pongas.
 ## El recorrido total es el doble de este valor.
-@export var patrol_distance: float = 110.0
+@export var patrol_distance: float = 300.0
 ## Inclinación de la línea. 0 = horizontal, 90 = vertical.
 @export_range(-180.0, 180.0, 1.0) var patrol_angle_degrees: float = 0.0
 @export var patrol_speed: float = 70.0
@@ -173,7 +173,7 @@ func _state_patrulla(delta: float) -> void:
 		Behavior.PATRULLA:
 			_do_line_patrol(delta)
 		Behavior.PERSEGUIR:
-			_brake(delta)
+			_do_wander(delta)
 
 
 func _state_atacar(delta: float) -> void:
@@ -288,21 +288,43 @@ func _turn_around() -> void:
 	_stuck_timer = 0.0
 	velocity = Vector2.ZERO
 
+var _wander_target: Vector2 = Vector2.ZERO
+
+func _do_wander(delta: float) -> void:
+	if _wait_timer > 0.0:
+		_wait_timer -= delta
+		_brake(delta)
+		return
+		
+	if _wander_target == Vector2.ZERO or global_position.distance_to(_wander_target) < 20.0:
+		_wander_target = _home_position + Vector2(randf_range(-patrol_distance, patrol_distance), randf_range(-patrol_distance, patrol_distance))
+		_wait_timer = randf_range(1.0, patrol_wait)
+		return
+		
+	if state != State.ATACAR:
+		_face(_wander_target)
+	
+	_move_towards(_wander_target, delta)
+
 
 ## Si choca contra una pared en mitad de la línea, se da la vuelta igual
 ## en vez de quedarse empujando el muro para siempre.
 func _check_stuck(delta: float) -> void:
-	if behavior != Behavior.PATRULLA or _wait_timer > 0.0:
+	if (behavior != Behavior.PATRULLA and behavior != Behavior.PERSEGUIR) or _wait_timer > 0.0:
 		_stuck_timer = 0.0
 		return
 	if state != State.PATRULLA and state != State.ATACAR:
 		return
 
 	var quiere_moverse := velocity.length() > 5.0
-	if quiere_moverse and get_real_velocity().length() < 12.0:
+	if quiere_moverse and get_real_velocity().length() < 5.0:
 		_stuck_timer += delta
 		if _stuck_timer > 0.35:
-			_turn_around()
+			if behavior == Behavior.PATRULLA:
+				_turn_around()
+			elif behavior == Behavior.PERSEGUIR:
+				_wander_target = Vector2.ZERO # Force new target
+				_stuck_timer = 0.0
 	else:
 		_stuck_timer = 0.0
 
@@ -468,6 +490,19 @@ func die() -> void:
 	if vision_area != null:
 		vision_area.set_deferred("monitoring", false)
 	z_index = -1
+
+	# Drop note if last enemy
+	var enemies = get_tree().get_nodes_in_group("Enemies")
+	var alive_count = 0
+	for e in enemies:
+		if e.state != State.MUERTO:
+			alive_count += 1
+			
+	if alive_count == 0:
+		var note_scene = preload("res://Scenes/NoteItem.tscn")
+		var note = note_scene.instantiate()
+		get_tree().current_scene.call_deferred("add_child", note)
+		note.set_deferred("global_position", global_position)
 
 
 func _flash_hit() -> void:

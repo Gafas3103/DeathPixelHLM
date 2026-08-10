@@ -4,7 +4,6 @@ extends Node
 signal health_changed(new_health)
 signal ammo_changed(new_ammo)
 signal lives_changed(new_lives)
-signal character_swapped(active_char_id)
 signal player_died
 signal player_respawned
 
@@ -14,8 +13,6 @@ var health: float = 100.0
 var max_ammo: int = 8
 var ammo: int = 8
 var lives: int = 3
-var active_character: int = 0 # 0 = Agente Silenciador (Player), 1 = Agente Portador (Holding)
-
 # Función para aplicar daño al jugador
 func take_damage(amount: float):
 	health = clamp(health - amount, 0.0, max_health)
@@ -42,11 +39,6 @@ func reload():
 	ammo = max_ammo
 	ammo_changed.emit(ammo)
 
-# Cambiar el personaje activo e informar a la interfaz
-func set_active_character(char_id: int):
-	active_character = char_id
-	character_swapped.emit(active_character)
-
 # Restablecer el estado tras morir y perder una vida (Checkpoint / Respawn)
 func respawn():
 	if lives > 0:
@@ -60,13 +52,8 @@ func respawn():
 	player_respawned.emit()
 
 
-# Reiniciar todo el juego por completo (por si se quiere empezar de nuevo)
 func reset_game():
 	lives = 3
 	health = max_health
 	ammo = max_ammo
-	active_character = 0
-	health_changed.emit(health)
-	ammo_changed.emit(ammo)
-	lives_changed.emit(lives)
-	character_swapped.emit(active_character)
+	get_tree().reload_current_scene()
