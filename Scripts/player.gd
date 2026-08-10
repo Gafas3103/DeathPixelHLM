@@ -4,7 +4,7 @@ extends CharacterBody2D
 
 const BALA_SCENE = preload("res://Scenes/Bala.tscn")
 
-@export var speed: float = 300.0
+@export var speed: float = 100.0
 @export var is_active: bool = true # Empieza activo por defecto
 
 @export_group("Disparo")

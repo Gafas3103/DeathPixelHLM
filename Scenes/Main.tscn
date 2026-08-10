@@ -15,7 +15,7 @@ position = Vector2(289, 275)
 position = Vector2(149.99998, 197.99998)
 
 [node name="Node2D" parent="." unique_id=47340219 instance=ExtResource("2_kln2b")]
-position = Vector2(77, 25)
+position = Vector2(121, 209)
 
 [node name="Enemies" type="Node2D" parent="." unique_id=917840554]
 

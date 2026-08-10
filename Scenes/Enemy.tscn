@@ -1,7 +1,7 @@
-[gd_scene load_steps=11 format=3 uid="uid://wjsh3rttm2rt"]
+[gd_scene format=3 uid="uid://wjsh3rttm2rt"]
 
 [ext_resource type="Script" uid="uid://da6b8v4bpn7qy" path="res://Scripts/Enemy/enemy.gd" id="1_wovta"]
-[ext_resource type="Script" path="res://Scripts/CharacterVisuals.gd" id="2_visuals"]
+[ext_resource type="Script" uid="uid://dxj0gvvdnmiuu" path="res://Scripts/CharacterVisuals.gd" id="2_visuals"]
 [ext_resource type="Texture2D" uid="uid://cqorm6rodkng5" path="res://Assest/Enemy/EnemyStop.png" id="3_stop"]
 [ext_resource type="Texture2D" uid="uid://cst6mq4sjg1v6" path="res://Assest/Enemy/EnemyWalk.png" id="4_walk"]
 [ext_resource type="Texture2D" uid="uid://23psl5thuihs" path="res://Assest/Enemy/EnemyAttack.png" id="5_attack"]
@@ -13,7 +13,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("5_attack")
 }],
-"loop": false,
+"loop": 0,
 "name": &"Attack",
 "speed": 10.0
 }, {
@@ -46,13 +46,13 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_6w11f"]
-size = Vector2(58, 67)
+size = Vector2(19, 23)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_vision"]
-radius = 260.0
+radius = 51.0392
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_hearing"]
-radius = 420.0
+radius = 77.05842
 
 [node name="CharacterBody2D" type="CharacterBody2D" unique_id=1226710034]
 position = Vector2(275, 139)
@@ -66,13 +66,14 @@ position = Vector2(0, 8.493662e-06)
 scale = Vector2(0.25438613, 0.2446043)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=919671188]
-position = Vector2(0, 0)
-scale = Vector2(0.23015885, 0.2115385)
+position = Vector2(1, 2.0000038)
+scale = Vector2(0.0790794, 0.06862639)
 sprite_frames = SubResource("SpriteFrames_wovta")
 animation = &"Attack"
 autoplay = "Stop"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1264874007]
+position = Vector2(1.5, 2.5)
 shape = SubResource("RectangleShape2D_6w11f")
 
 [node name="Visuals" type="Node2D" parent="." unique_id=913377021]
@@ -88,17 +89,20 @@ collision_layer = 0
 collision_mask = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="VisionArea" unique_id=1913589082]
+position = Vector2(-1, 1)
 shape = SubResource("CircleShape2D_vision")
 
 [node name="VisionRay" type="RayCast2D" parent="." unique_id=1177305364]
-position = Vector2(1, 0)
-collision_mask = 1
+position = Vector2(0, 1)
+target_position = Vector2(0, 35)
 
 [node name="HearingArea" type="Area2D" parent="." unique_id=60806486]
+position = Vector2(0, 1)
 collision_layer = 0
 collision_mask = 2
 
 [node name="CollisionShape2D2" type="CollisionShape2D" parent="HearingArea" unique_id=951515731]
+position = Vector2(0, -1)
 shape = SubResource("CircleShape2D_hearing")
 
 [node name="NavigationAgent2D" type="NavigationAgent2D" parent="." unique_id=1977095715]
