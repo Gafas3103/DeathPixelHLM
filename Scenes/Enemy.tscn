@@ -1,0 +1,120 @@
+[gd_scene format=3 uid="uid://wjsh3rttm2rt"]
+
+[ext_resource type="Script" uid="uid://da6b8v4bpn7qy" path="res://Scripts/Enemy/enemy.gd" id="1_wovta"]
+[ext_resource type="Script" uid="uid://dxj0gvvdnmiuu" path="res://Scripts/CharacterVisuals.gd" id="2_visuals"]
+[ext_resource type="Shader" path="res://Shaders/DeathPixelMaterial.gdshader" id="7_mat_shader"]
+[ext_resource type="Texture2D" uid="uid://cqorm6rodkng5" path="res://Assest/Enemy/EnemyStop.png" id="3_stop"]
+[ext_resource type="Texture2D" uid="uid://cst6mq4sjg1v6" path="res://Assest/Enemy/EnemyWalk.png" id="4_walk"]
+[ext_resource type="Texture2D" uid="uid://23psl5thuihs" path="res://Assest/Enemy/EnemyAttack.png" id="5_attack"]
+[ext_resource type="Texture2D" uid="uid://c0ppgpqbsedjq" path="res://Assest/Enemy/EnemyDead.png" id="6_dead"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_wovta"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_attack")
+}],
+"loop": 0,
+"name": &"Attack",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_dead")
+}],
+"loop": 0,
+"name": &"Dead",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_stop")
+}],
+"loop": 1,
+"name": &"Stop",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_walk")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_stop")
+}],
+"loop": 1,
+"name": &"Walk",
+"speed": 8.0
+}]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_enemy"]
+resource_local_to_scene = true
+shader = ExtResource("7_mat_shader")
+shader_parameter/albedo_color = Color(1, 0.82, 0.7, 1)
+shader_parameter/metallic = 0.78
+shader_parameter/roughness = 0.24
+shader_parameter/emission_enabled = false
+shader_parameter/emission = Color(1, 0.3, 0.12, 1)
+shader_parameter/emission_energy_multiplier = 0.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6w11f"]
+size = Vector2(19, 23)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_vision"]
+radius = 25.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hearing"]
+radius = 40.1995
+
+[node name="CharacterBody2D" type="CharacterBody2D" unique_id=1226710034 groups=["Enemies"]]
+position = Vector2(275, 139)
+collision_layer = 4
+collision_mask = 3
+script = ExtResource("1_wovta")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=121361416]
+visible = false
+position = Vector2(0, 8.493662e-06)
+scale = Vector2(0.14, 0.13)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=919671188]
+material = SubResource("ShaderMaterial_enemy")
+position = Vector2(1, 2.0000038)
+scale = Vector2(0.0790794, 0.06862639)
+sprite_frames = SubResource("SpriteFrames_wovta")
+animation = &"Attack"
+autoplay = "Stop"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1264874007]
+position = Vector2(1.5, 2.5)
+shape = SubResource("RectangleShape2D_6w11f")
+
+[node name="Visuals" type="Node2D" parent="." unique_id=913377021]
+script = ExtResource("2_visuals")
+muzzle_offset = Vector2(28, -2)
+flash_size = 9.0
+flash_color = Color(1, 0.62, 0.3, 1)
+eject_shell = false
+
+[node name="VisionArea" type="Area2D" parent="." unique_id=881434148]
+position = Vector2(1, 0)
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="VisionArea" unique_id=1913589082]
+position = Vector2(-1, 1)
+shape = SubResource("CircleShape2D_vision")
+
+[node name="VisionRay" type="RayCast2D" parent="." unique_id=1177305364]
+position = Vector2(0, 1)
+target_position = Vector2(0, 35)
+
+[node name="HearingArea" type="Area2D" parent="." unique_id=60806486]
+position = Vector2(0, 1)
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="HearingArea" unique_id=951515731]
+position = Vector2(0, -1)
+shape = SubResource("CircleShape2D_hearing")
+
+[node name="NavigationAgent2D" type="NavigationAgent2D" parent="." unique_id=1977095715]
