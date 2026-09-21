@@ -1,0 +1,218 @@
+{
+  "AI_01": {
+    "actual": "con gracia awareness=0.00; a 0.35 s awareness=0.21 (sin atacar); a 2.7 s detecta=true",
+    "status": "Pass"
+  },
+  "AI_02": {
+    "actual": "awareness tras 0.5 s: sigilo=0.14 vs caminando=0.24",
+    "status": "Pass"
+  },
+  "AI_03": {
+    "actual": "por la espalda: muerto=true silencioso=true puntos +200",
+    "status": "Pass"
+  },
+  "AI_04": {
+    "actual": "golpe de frente: el enemigo sobrevive (15/60)",
+    "status": "Pass"
+  },
+  "AI_05": {
+    "actual": "ruido lejano: estado=0 (0=patrulla); ruido cercano: estado=4 (4=investigar)",
+    "status": "Pass"
+  },
+  "AI_06": {
+    "actual": "enemigo con 25% de vida: estado=5 (5=huir)",
+    "status": "Pass"
+  },
+  "AI_07": {
+    "actual": "A*: ruta de 13 puntos entre dos zonas separadas por paredes; todos caminables=true",
+    "status": "Pass"
+  },
+  "AI_08": {
+    "actual": "9 combinaciones nivel/dificultad: gracia e invulnerabilidad activas, ningún enemigo a <100 px, awareness 0",
+    "status": "Pass"
+  },
+  "CTL_01": {
+    "actual": "modo del mouse: partida=0 (3=confinado+oculto), pausa=0 (2=confinado), al reanudar=0, menú=0 (0=visible)",
+    "status": "Fail"
+  },
+  "FLW_01": {
+    "actual": "combo: 1 -> 2 -> 4 (racha rápida +2), ventana 11 s, tras expirar=1",
+    "status": "Pass"
+  },
+  "FLW_02": {
+    "actual": "combo 4/7/10 -> niveles 1/2/3; daño combo 10 = x2.35",
+    "status": "Pass"
+  },
+  "FLW_03": {
+    "actual": "aparece el texto de puntos '+N' sobre el enemigo caído: true",
+    "status": "Pass"
+  },
+  "HUD_01": {
+    "actual": "barra: 100 -> 70 (daño 30) -> 90 (cura 20); corazones=2",
+    "status": "Pass"
+  },
+  "HUD_02": {
+    "actual": "rifle='RIFLE 20/40' | escopeta='ESCOPETA 6/12' | cuchillo='CUCHILLO ∞'",
+    "status": "Pass"
+  },
+  "HUD_03": {
+    "actual": "tras 1 baja: multiplicador 'X2', barra de combo 1.00",
+    "status": "Pass"
+  },
+  "HUD_04": {
+    "actual": "barra de sigilo: awareness 0.5 -> 'SOSPECHA'; enemigo que te detecta de verdad -> '¡DETECTADO!'; con gracia -> 'OCULTO · 3 s'",
+    "status": "Pass"
+  },
+  "HUD_05": {
+    "actual": "guía: ENEMIGO -> LLAVE -> PUERTA -> SALIDA",
+    "status": "Pass"
+  },
+  "HUD_06": {
+    "actual": "minimapa oculto con el ajuste=true, visible al reactivar=true",
+    "status": "Pass"
+  },
+  "LVL_01": {
+    "actual": "botones=5, jugables=[true, true, true, false, false]",
+    "status": "Pass"
+  },
+  "LVL_02": {
+    "actual": "nivel 2 bloqueado al inicio=true, desbloqueado tras ganar el 1=true",
+    "status": "Pass"
+  },
+  "LVL_03": {
+    "actual": "nivel 3 -> Difícil: 'ENEMIGOS: 9   ' | Fácil: 'ENEMIGOS: 4   '",
+    "status": "Pass"
+  },
+  "LVL_04": {
+    "actual": "nivel1/2/3: llave->puerta->salida->victoria = [true, true, true]",
+    "status": "Pass"
+  },
+  "LVL_05": {
+    "actual": "llaves=1, custodio vivo=true",
+    "status": "Pass"
+  },
+  "LVL_06": {
+    "actual": "nivel=2 vida=45 corazones=2 puntaje=1234 cargador=7",
+    "status": "Pass"
+  },
+  "LVL_07": {
+    "actual": "nivel=1 vida=100 corazones=3 puntaje=0",
+    "status": "Pass"
+  },
+  "MEN_01": {
+    "actual": "botones: [\"JUGAR\", \"TUTORIAL\", \"AJUSTES\", \"CRÉDITOS\", \"SALIR\"]",
+    "status": "Pass"
+  },
+  "MEN_02": {
+    "actual": "primera vez: aviso del tutorial visible",
+    "status": "Pass"
+  },
+  "MEN_03": {
+    "actual": "con tutorial hecho JUGAR abre: LevelSelect",
+    "status": "Pass"
+  },
+  "MEN_04": {
+    "actual": "créditos abre=true, cierra=true",
+    "status": "Pass"
+  },
+  "MEN_05": {
+    "actual": "ajustes como escena propia=true; al cerrar vuelve a: MainMenu",
+    "status": "Pass"
+  },
+  "OBJ_01": {
+    "actual": "vida 20%: { 0: 16, 1: 35, 2: 0, 3: 9, -1: 0 } | sin munición: { 0: 30, 1: 6, 2: 0, 3: 24, -1: 0 }",
+    "status": "Pass"
+  },
+  "OBJ_02": {
+    "actual": "puerta cerrada bloquea al jugador=true; abierta lo deja pasar=true",
+    "status": "Pass"
+  },
+  "OBJ_03": {
+    "actual": "notas soltadas: nivel 1=1, nivel 2=0",
+    "status": "Pass"
+  },
+  "OBJ_04": {
+    "actual": "botiquín con vida llena se conserva=true; munición con reserva llena se conserva=true",
+    "status": "Pass"
+  },
+  "PER_01": {
+    "actual": "progreso guardado y recargado: nivel desbloqueado=3, mejor puntaje nivel 1=4321",
+    "status": "Pass"
+  },
+  "SET_01": {
+    "actual": "settings.cfg guardado: fullscreen=false master=0.5",
+    "status": "Pass"
+  },
+  "SET_02": {
+    "actual": "bus Master=-6.02 dB (esperado -6.02), buses Music/SFX creados",
+    "status": "Pass"
+  },
+  "SET_03": {
+    "actual": "reasignar recargar a T -> 'T'; conflicto con W rechazado por 'MOVER ARRIBA'; reset -> 'R'",
+    "status": "Pass"
+  },
+  "SET_04": {
+    "actual": "daño enemigo Difícil x1.5, Fácil x0.6; recarga auto en Difícil=false",
+    "status": "Pass"
+  },
+  "SET_05": {
+    "actual": "brillo 60% -> capa negra alfa 0.40; 130% -> capa aditiva=true",
+    "status": "Pass"
+  },
+  "STB_01": {
+    "actual": "51 scripts/escenas cargados; fallos: []",
+    "status": "Pass"
+  },
+  "TUT_01": {
+    "actual": "12 pasos completados con acciones reales; pasos que no avanzaron=0; tutorial_done=true",
+    "status": "Pass"
+  },
+  "TUT_02": {
+    "actual": "matar al muñeco con el arma equivocada no cuenta y aparece otro: true",
+    "status": "Pass"
+  },
+  "TUT_03": {
+    "actual": "cruzar detectado no cuenta=true; matar al guardia de frente no cuenta=true",
+    "status": "Pass"
+  },
+  "TUT_04": {
+    "actual": "tecla N: paso 1 -> 2",
+    "status": "Pass"
+  },
+  "TUT_05": {
+    "actual": "tutorial_done=true y progreso escrito en disco",
+    "status": "Pass"
+  },
+  "WPN_01": {
+    "actual": "un toque gastó 1 bala(s)",
+    "status": "Pass"
+  },
+  "WPN_02": {
+    "actual": "mantener 0.7 s gastó 6 balas (ráfaga)",
+    "status": "Pass"
+  },
+  "WPN_03": {
+    "actual": "perdigones por disparo=8, cargador=6",
+    "status": "Pass"
+  },
+  "WPN_04": {
+    "actual": "vida enemigo 60 -> 15; munición de rifle intacta=true",
+    "status": "Pass"
+  },
+  "WPN_05": {
+    "actual": "al vaciar el cargador recarga sola: Fácil=true, Normal=true, Difícil=false (debe ser manual con R)",
+    "status": "Pass"
+  },
+  "WPN_06": {
+    "actual": "teclas 2->1, 3->2, 1->0, Q->1, rueda->2",
+    "status": "Pass"
+  },
+  "WPN_07": {
+    "actual": "cargador escopeta=6, rifle=3 (independientes)",
+    "status": "Pass"
+  },
+  "WPN_08": {
+    "actual": "Difícil: R inicia la recarga=true y termina con 20/5",
+    "status": "Pass"
+  }
+}
