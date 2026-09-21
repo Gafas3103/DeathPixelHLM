@@ -1,33 +1,18 @@
 extends Node2D
 
-## COMPONENTE VISUAL DE PERSONAJE  (DeathPixel / HLM)
-## ---------------------------------------------------------------------------
-## Se agrega como HIJO del CharacterBody2D del personaje. No toca la física ni
-## el sistema de apuntado: el cuerpo sigue rotando con look_at() igual que
-## antes. Este nodo solo se encarga de lo VISUAL:
-##
-##   1. Animación de disparo (pose Attack) con retorno automático.
-##   2. Retroceso / kickback del sprite hacia atrás al disparar.
-##   3. Fogonazo (muzzle flash) generado por código, sin necesitar arte.
-##   4. Mantener el sprite derecho y voltearlo según hacia dónde apunta,
-##      porque los sprites Swat están dibujados de frente y no en top-down.
-##
-## Uso desde el script del jugador:
-##      visuals.fire()          -> al disparar
-##      visuals.is_shooting()   -> para no pisar la animación de disparo
-##      visuals.set_dead(true)  -> al morir
-## ---------------------------------------------------------------------------
+## Parte visual del personaje (hijo del CharacterBody2D): pose de disparo, retroceso, fogonazo y
+## sprite derecho volteado según la mira. No toca la física ni el apuntado.
+## Uso: visuals.fire() al disparar, visuals.is_shooting(), visuals.set_dead(true).
 
 @export_group("Sprite")
-## Si se deja vacío se busca automáticamente el AnimatedSprite2D del personaje.
+## si está vacío busca el AnimatedSprite2D del personaje
 @export var sprite_path: NodePath
-## Los sprites Swat están dibujados de frente. Si el cuerpo rota con look_at(),
-## esto los mantiene derechos para que no se vean acostados.
-## Ponlo en false si algún día usan arte top-down (tipo hitman1_silencer).
+## los sprites Swat están dibujados de frente: esto los mantiene derechos aunque el cuerpo rote
+## false si algún día usan arte top-down
 @export var keep_upright: bool = true
-## Voltea el sprite en horizontal según hacia dónde apunte el personaje.
+## voltea el sprite según hacia dónde apunte
 @export var flip_with_aim: bool = true
-## Velocidad mínima para considerar que el personaje está caminando.
+## velocidad mínima para contar como caminando
 @export var walk_threshold: float = 8.0
 
 @export_group("Retroceso")
@@ -44,7 +29,7 @@ extends Node2D
 @export var eject_shell: bool = true
 
 @export_group("Animación")
-## Cuánto dura visible la pose de disparo antes de volver a idle/walk.
+## cuánto dura la pose de disparo
 @export var shoot_hold_time: float = 0.13
 
 var _body: Node2D = null
@@ -74,18 +59,18 @@ func _process(delta: float) -> void:
 	if _sprite == null:
 		return
 
-	# --- 1. Mantener el sprite derecho aunque el cuerpo rote ---------------
+	# sprite derecho aunque el cuerpo rote
 	if keep_upright:
 		_sprite.global_rotation = 0.0
 
-	# --- 2. Voltear según hacia dónde apunta ------------------------------
+	# voltear según la mira
 	if flip_with_aim and _body != null:
-		# El eje X local del cuerpo es la dirección de apuntado (look_at).
+		# el eje X local es la dirección de apuntado
 		var aim_x: float = _body.global_transform.x.x
 		if absf(aim_x) > 0.05:
 			_sprite.flip_h = aim_x < 0.0
 
-	# --- 3. Elegir la animación -------------------------------------------
+	# elegir animación
 	_update_animation()
 
 
@@ -93,7 +78,7 @@ func _update_animation() -> void:
 	if _dead:
 		AnimNames.play(_sprite, AnimNames.DEAD)
 		return
-	# Mientras dura el disparo no pisamos la pose de ataque.
+	# no pisar la pose de ataque mientras dura el disparo
 	if _shoot_timer > 0.0:
 		return
 	var moving := false
@@ -105,11 +90,9 @@ func _update_animation() -> void:
 		AnimNames.play(_sprite, AnimNames.IDLE)
 
 
-# ===========================================================================
-#  API PÚBLICA
-# ===========================================================================
+# api
 
-## Llamar cada vez que el personaje dispara.
+## llamar cada vez que dispara
 func fire() -> void:
 	if _dead:
 		return
@@ -124,7 +107,7 @@ func is_shooting() -> bool:
 	return _shoot_timer > 0.0
 
 
-## Parpadeo al recibir daño.
+## parpadeo al recibir daño
 func flash_hit(color: Color = Color(3.0, 0.7, 0.7, 1.0), time: float = 0.14) -> void:
 	if _sprite == null:
 		return
@@ -159,9 +142,7 @@ func set_dead(value: bool) -> void:
 			AnimNames.play(_sprite, AnimNames.DEAD)
 
 
-# ===========================================================================
-#  INTERNO
-# ===========================================================================
+# interno
 
 func _find_sprite() -> AnimatedSprite2D:
 	if not sprite_path.is_empty():
@@ -189,8 +170,7 @@ func _play_shoot_anim() -> void:
 	if _sprite == null:
 		return
 	if not AnimNames.play(_sprite, AnimNames.SHOOT):
-		# Si el personaje no tiene animación de disparo, al menos que se note
-		# el retroceso: dejamos el temporizador en 0 para no congelar el idle.
+		# sin animación de disparo al menos que se note el retroceso
 		_shoot_timer = 0.0
 
 
@@ -203,7 +183,7 @@ func _do_recoil() -> void:
 	_sprite.position = _sprite_home
 	_sprite.scale = _sprite_home_scale
 
-	# El eje -X local del cuerpo es "hacia atrás" respecto a la mira.
+	# -X local es hacia atrás respecto a la mira
 	var back := _sprite_home - Vector2(recoil_distance, 0.0)
 	var squashed := _sprite_home_scale * Vector2(1.0 - recoil_squash, 1.0 + recoil_squash)
 

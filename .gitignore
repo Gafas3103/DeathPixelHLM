@@ -1,34 +1,21 @@
-# ---------------------------------------------------------------------------
-#  Godot 4 — caché e importaciones
-# ---------------------------------------------------------------------------
-# NUNCA debe subirse al repo: se regenera sola al abrir el proyecto y son
-# miles de archivos .ctex y .md5 que provocan conflictos horribles cuando
-# varias personas trabajan sobre el mismo repositorio.
+# cache de Godot
 .godot/
 /android/
 
-# ---------------------------------------------------------------------------
-#  Copias duplicadas del proyecto (NO SUBIR)
-# ---------------------------------------------------------------------------
-# Quedaron de descomprimir los ZIP dentro de la carpeta del proyecto.
-# Son ~383 MB de archivos repetidos. Godot ya las ignora con .gdignore.
+# copias del proyecto que quedaron de descomprimir zips
 HLM/
 Scenes/DeathPixelHLM-main/
 Scenes/DeathPixel_ACTUALIZADO/
 DeathPixel_ACTUALIZADO/
 
-# ---------------------------------------------------------------------------
-#  Exportaciones y binarios
-# ---------------------------------------------------------------------------
+# exportaciones
 build/
 export/
 *.exe
 *.pck
 *.zip
 
-# ---------------------------------------------------------------------------
-#  Sistema operativo
-# ---------------------------------------------------------------------------
+# sistema
 .DS_Store
 Thumbs.db
 desktop.ini

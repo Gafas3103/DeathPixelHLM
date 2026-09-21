@@ -1,0 +1,7 @@
+# git guarda todo con LF para que nadie tenga saltos de línea distintos
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ttf binary
+*.import text eol=lf
