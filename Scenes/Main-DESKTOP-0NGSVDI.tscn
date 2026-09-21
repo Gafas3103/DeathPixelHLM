@@ -10,6 +10,9 @@
 [node name="Map" parent="." unique_id=966074929 instance=ExtResource("1_pbw6q")]
 position = Vector2(289, 275)
 
+[node name="Node2D" parent="." unique_id=47340219 instance=ExtResource("2_kln2b")]
+position = Vector2(121, 209)
+
 [node name="Enemies" type="Node2D" parent="." unique_id=917840554]
 
 [node name="Enemy" parent="Enemies" unique_id=1263616115 instance=ExtResource("4_enemy")]
@@ -20,8 +23,5 @@ position = Vector2(517, 162)
 
 [node name="Enemy3" parent="Enemies" unique_id=551575017 instance=ExtResource("4_enemy")]
 position = Vector2(532, 324)
-
-[node name="Node2D" parent="." unique_id=47340219 instance=ExtResource("2_kln2b")]
-position = Vector2(121, 209)
 
 [node name="HUD" parent="." unique_id=1817380810 instance=ExtResource("3_hud")]
