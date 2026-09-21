@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://4ua54socubb4" path="res://Scripts/player.gd" id="1_script"]
 [ext_resource type="Script" uid="uid://dxj0gvvdnmiuu" path="res://Scripts/CharacterVisuals.gd" id="2_visuals"]
+[ext_resource type="Script" path="res://Scripts/luz_reactiva.gd" id="10_luz"]
 [ext_resource type="Shader" path="res://Shaders/DeathPixelMaterial.gdshader" id="9_mat_shader"]
 [ext_resource type="Texture2D" uid="uid://84j8mi3chm1y" path="res://Assest/Player1/SwatStop.png" id="3_stop"]
 [ext_resource type="Texture2D" uid="uid://5lecduuw2iat" path="res://Assest/Player1/SwatMove.png" id="4_move"]
@@ -70,6 +71,18 @@ load_path = "res://.godot/imported/hitman1_silencer.png-65b5f49dcaa73a248e67294a
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_sbqex"]
 size = Vector2(18, 23)
 
+[sub_resource type="Gradient" id="Gradient_luz"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_luz"]
+gradient = SubResource("Gradient_luz")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
 [node name="CharacterBody2D" type="CharacterBody2D" unique_id=743168237]
 position = Vector2(181, 255)
 collision_layer = 2
@@ -97,6 +110,12 @@ script = ExtResource("2_visuals")
 muzzle_offset = Vector2(32, -4)
 
 [node name="Muzzle" type="Marker2D" parent="." unique_id=552785404]
+
+[node name="LuzReactiva" type="PointLight2D" parent="."]
+color = Color(1, 0.93, 0.78, 1)
+texture = SubResource("GradientTexture2D_luz")
+texture_scale = 1.6
+script = ExtResource("10_luz")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=456731017]
 zoom = Vector2(2, 2)

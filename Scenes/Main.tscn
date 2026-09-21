@@ -7,6 +7,9 @@
 
 [node name="Main" type="Node2D" unique_id=1126179646]
 
+[node name="Oscuridad" type="CanvasModulate" parent="."]
+color = Color(0.28, 0.28, 0.36, 1)
+
 [node name="Nivel3" parent="." unique_id=1635150152 instance=ExtResource("1_rgh2o")]
 position = Vector2(122, 266)
 
