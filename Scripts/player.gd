@@ -35,6 +35,10 @@ var _shot_glow: float = 0.0
 var _shake: float = 0.0
 var _debug_tick: float = 0.0
 var _time: float = 0.0
+var puppet: bool = false
+var puppet_velocity: Vector2 = Vector2.ZERO
+var puppet_aim: Vector2 = Vector2.INF
+var puppet_fire: bool = false
 
 var light_visibility: float:
 	get:
@@ -126,6 +130,10 @@ func _physics_process(delta):
 		move_and_slide()
 		return
 
+	if puppet or Global.cutscene_active:
+		_puppet_step(delta)
+		return
+
 	look_at(get_global_mouse_position())
 
 	_handle_weapon_keys()
@@ -174,6 +182,8 @@ func _physics_process(delta):
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if puppet or Global.cutscene_active:
+		return
 	if event.is_action_pressed("flashlight") and not event.is_echo():
 		if Global.health > 0:
 			_toggle_flashlight()
@@ -264,7 +274,7 @@ func _handle_shoot(delta: float) -> void:
 
 
 func _fire_weapon(def: Dictionary) -> void:
-	var angle := global_position.angle_to_point(get_global_mouse_position())
+	var angle := global_position.angle_to_point(_aim_point())
 	var pellets := int(def["pellets"])
 	var damage := float(def["damage"]) * Global.damage_mult()
 	var tier := Global.flow_tier()
@@ -293,6 +303,40 @@ func _fire_weapon(def: Dictionary) -> void:
 
 	if visuals != null:
 		visuals.fire()
+
+
+func _aim_point() -> Vector2:
+	if (puppet or Global.cutscene_active) and puppet_aim.is_finite():
+		return puppet_aim
+	return get_global_mouse_position()
+
+
+func _puppet_step(delta: float) -> void:
+	if puppet_aim.is_finite() and global_position.distance_to(puppet_aim) > 1.0:
+		look_at(puppet_aim)
+	velocity = puppet_velocity
+	is_sneaking = false
+	noise_level = 1.0 if velocity.length() > 5.0 else 0.5
+	if _shot_glow > 0.0:
+		noise_level = 1.6
+	if _reload_left > 0.0:
+		_update_reload(delta)
+	elif not Global.cutscene_active and Global.ammo <= 0 and Global.can_reload():
+		_start_reload()
+	if puppet_fire and not Global.cutscene_active:
+		var def: Dictionary = Weapons.LIST[Global.current_weapon]
+		if not bool(def["melee"]) and _cooldown <= 0.0 and _reload_left <= 0.0 and Global.use_ammo():
+			_fire_weapon(def)
+			_cooldown = float(def["fire_rate"]) * Global.fire_rate_mult()
+	move_and_slide()
+
+
+func puppet_melee() -> void:
+	_melee()
+
+
+func puppet_switch_weapon(index: int) -> void:
+	_switch_weapon(index)
 
 
 func _update_reload(delta: float) -> void:

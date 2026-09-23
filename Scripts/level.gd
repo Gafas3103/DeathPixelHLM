@@ -5,6 +5,7 @@ const KeyItemScene := preload("res://Scenes/Items/KeyItem.tscn")
 const PickupScene := preload("res://Scenes/Items/Pickup.tscn")
 const NoteItemScene := preload("res://Scenes/NoteItem.tscn")
 const Story := preload("res://Scripts/story.gd")
+const Cutscenes := preload("res://Scripts/cutscenes.gd")
 const NO_CELL := Vector2i(-999999, -999999)
 
 const ENEMY_PATH := "res://Scenes/Enemy.tscn"
@@ -94,6 +95,7 @@ var _door_radio_done: bool = false
 var _boss_level: bool = false
 var _boss_spawned: bool = false
 var _boss_pending: bool = false
+var _outro_started: bool = false
 
 var _alarm_on: bool = false
 var _alarm_used: bool = false
@@ -142,7 +144,21 @@ func _ready() -> void:
 	else:
 		Global.set_objective(objective_start)
 
-	if not (GameManager.take_briefing() and _open_briefing()):
+	if GameManager.trailer_mode:
+		_begin()
+	elif GameManager.take_briefing():
+		call_deferred("_start_intro")
+	else:
+		_begin()
+
+
+func _start_intro() -> void:
+	if not is_inside_tree():
+		return
+	await Cutscenes.chapter_intro(self, level_index)
+	if not is_inside_tree() or _begun:
+		return
+	if not _open_briefing():
 		_begin()
 
 
@@ -153,7 +169,7 @@ func _process(delta: float) -> void:
 		if _briefing_open and not is_instance_valid(_briefing):
 			_begin()
 		return
-	if _twists_over:
+	if _twists_over or Global.cutscene_active:
 		return
 	if not Global.level_active:
 		end_twists()
@@ -178,6 +194,10 @@ func _begin() -> void:
 	_briefing_open = false
 	_briefing = null
 	Global.level_active = true
+	if Global.objective != "":
+		Global.objective_changed.emit(Global.objective)
+	if GameManager.trailer_mode:
+		return
 	_radio_lines(_chapter.get("radio_start", []))
 	_radio_lines(Story.TWIST_START.get(twist, []))
 	if twist == "caceria":
@@ -581,7 +601,53 @@ func _spawn_boss() -> void:
 	_boss_spawned = true
 	var parent := _enemies_parent()
 	boss.position = parent.to_local(_boss_spawn_point())
+	var cinematic := Global.health > 0.0
+	boss.set("cinematic_death", cinematic)
+	if cinematic:
+		Global.set_cutscene(true)
 	parent.add_child(boss, true)
+	if cinematic:
+		call_deferred("_play_boss_intro", boss)
+
+
+func _play_boss_intro(boss: Node2D) -> void:
+	if not is_inside_tree():
+		Global.set_cutscene(false)
+		return
+	await Cutscenes.boss_intro(self, boss)
+	if is_instance_valid(boss) and boss.has_method("finish_intro"):
+		boss.finish_intro()
+
+
+func _play_boss_down() -> void:
+	var pos := Vector2.INF
+	var corpse := get_tree().get_first_node_in_group("boss") as Node2D
+	if corpse != null:
+		pos = corpse.global_position
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.ignore_time_scale = true
+	timer.wait_time = 1.3
+	add_child(timer)
+	timer.start()
+	await timer.timeout
+	timer.queue_free()
+	if not is_inside_tree() or Global.health <= 0.0 or not pos.is_finite() or _outro_started:
+		return
+	await Cutscenes.boss_down(self, pos)
+
+
+func play_outro() -> void:
+	if _outro_started:
+		return
+	_outro_started = true
+	end_twists()
+	if GameManager.trailer_mode or Global.health <= 0.0 or not is_inside_tree():
+		GameManager.complete_level()
+		return
+	await Cutscenes.level_outro(self, level_index, _boss_level)
+	if is_inside_tree():
+		GameManager.complete_level()
 
 
 func _boss_spawn_point() -> Vector2:
@@ -611,6 +677,8 @@ func _on_boss_defeated() -> void:
 	if Global.has_key:
 		Global.set_objective(objective_door_open)
 	Global.show_message("¡EL CONTRATISTA HA CAÍDO!")
+	if Global.health > 0.0 and not GameManager.trailer_mode:
+		call_deferred("_play_boss_down")
 
 
 func spawn_reinforcement(variant: int, near: Vector2 = Vector2.INF) -> Node:

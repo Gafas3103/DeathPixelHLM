@@ -434,6 +434,7 @@ func _ready() -> void:
 	Global.combo_changed.connect(_on_combo_changed)
 	Global.objective_changed.connect(_on_objective_changed)
 	Global.message.connect(_show_toast)
+	Global.cutscene_changed.connect(_on_cutscene_changed)
 	Global.player_died.connect(_on_player_died)
 	Global.player_respawned.connect(_on_player_respawned)
 	Global.radio_message.connect(_on_radio_message)
@@ -1267,6 +1268,11 @@ func _show_objective_big() -> void:
 	_objective_tween = create_tween()
 	_objective_tween.tween_interval(2.2)
 	_objective_tween.tween_property(_objective_big, "modulate:a", 0.0, 0.8)
+
+
+func _on_cutscene_changed(active: bool) -> void:
+	visible = not active
+	_apply_mouse_mode()
 
 
 func _show_toast(text: String) -> void:

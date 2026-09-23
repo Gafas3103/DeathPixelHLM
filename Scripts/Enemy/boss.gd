@@ -135,12 +135,13 @@ var _roared: bool = false
 var _immune_note: float = 0.0
 var _shield_flash: float = 0.0
 var _fx_time: float = 0.0
-var _glow: float = 0.6
+var _glow: float = 0.3
 var _glow_scale: float = 1.0
 var _mat: ShaderMaterial = null
 var _aura_layer: Node2D = null
 var _fx_layer: Node2D = null
 var _intro_tween: Tween = null
+var cinematic_death: bool = false
 
 
 func _ready() -> void:
@@ -196,8 +197,9 @@ func _ready() -> void:
 
 	Global.set_boss(self)
 	_emit_health()
-	_radio_lines(Story.BOSS_INTRO)
-	Global.show_message("¡%s!" % Story.BOSS_NAME)
+	if not Global.cutscene_active:
+		_radio_lines(Story.BOSS_INTRO)
+		Global.show_message("¡%s!" % Story.BOSS_NAME)
 	_intro_fx()
 
 
@@ -232,6 +234,10 @@ func _physics_process(delta: float) -> void:
 	if state == State.MUERTO:
 		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 		move_and_slide()
+		_update_glow(delta)
+		return
+
+	if _cutscene_hold():
 		_update_glow(delta)
 		return
 
@@ -275,6 +281,11 @@ func _tick_intro(delta: float, player: Node2D) -> void:
 			_start_fight(0.5)
 		else:
 			_enter_dormant()
+
+
+func finish_intro() -> void:
+	if _mode == Mode.INTRO:
+		_mode_time = maxf(_mode_time, INTRO_TIME * 0.5)
 
 
 func _start_fight(first_delay: float) -> void:
@@ -350,6 +361,9 @@ func _tick_transition(delta: float, player: Node2D) -> void:
 
 
 func _tick_fight(delta: float, player: Node2D) -> void:
+	if Global.grace_time > 0.0 and _action == Action.NONE and global_position.distance_to(player.global_position) > WAKE_RANGE and _wall_between(player.global_position):
+		_enter_dormant()
+		return
 	_target = player
 	_last_known_position = player.global_position
 	awareness = 1.0
@@ -774,14 +788,19 @@ func _drop_supplies() -> void:
 		var mid := global_position.lerp(player.global_position, 0.5)
 		if _is_walkable(mid):
 			spot = mid
-	var rifle_need := 1.0 - float(Global.total_ammo(0)) / 140.0
-	var shell_need := 1.0 - float(Global.total_ammo(1)) / 42.0
-	if rifle_need >= shell_need:
-		_place_pickup(scene, holder, 0, 30, spot)
-	else:
-		_place_pickup(scene, holder, 3, 8, spot)
+	var drops: Array[Vector2i] = []
+	if Global.total_ammo(0) < 120:
+		drops.append(Vector2i(0, 30))
+	if Global.total_ammo(1) < 12:
+		drops.append(Vector2i(3, 8))
 	if Global.health < Global.max_health * 0.6:
-		_place_pickup(scene, holder, 1, 30, spot + Vector2(18, 10))
+		drops.append(Vector2i(1, 30))
+	var offsets: Array[Vector2] = [Vector2.ZERO, Vector2(18, 10), Vector2(-18, 10), Vector2(0, -18)]
+	for i in range(drops.size()):
+		var at := spot + offsets[i % offsets.size()]
+		if not _is_walkable(at) or _segment_blocked(spot, at):
+			at = spot
+		_place_pickup(scene, holder, drops[i].x, drops[i].y, at)
 
 
 func _place_pickup(scene: PackedScene, holder: Node, kind: int, amount: int, spot: Vector2) -> void:
@@ -868,7 +887,8 @@ func die() -> void:
 
 	_death_fx()
 	Global.clear_boss()
-	_radio_lines(Story.BOSS_DEFEAT)
+	if not cinematic_death:
+		_radio_lines(Story.BOSS_DEFEAT)
 	Global.enemy_killed.emit(global_position)
 
 	if visuals != null:
@@ -977,26 +997,26 @@ func _death_fx() -> void:
 func _update_glow(delta: float) -> void:
 	if _mat == null:
 		return
-	var target := 0.5 + 0.3 * float(phase)
+	var target := 0.16 + 0.1 * float(phase)
 	match _action:
 		Action.BURST:
 			if _action_time < BURST_AIM * _tele_mult:
-				target = 1.6
+				target = 0.55
 		Action.FAN:
-			target = 1.8
+			target = 0.65
 		Action.RING:
-			target = 2.4
+			target = 0.8
 		Action.DASH_AIM:
-			target = 2.2 + 0.6 * sin(_fx_time * 40.0)
+			target = 0.75 + 0.25 * sin(_fx_time * 40.0)
 		Action.RECOVER:
-			target = 0.15
+			target = 0.02
 		Action.STOMP:
-			target = 2.6 if not _stomp_done else 0.6
+			target = 0.9 if not _stomp_done else 0.25
 	if is_invulnerable():
-		target = 2.0 + 0.6 * sin(_fx_time * 20.0)
+		target = 0.6 + 0.25 * sin(_fx_time * 20.0)
 	if state == State.MUERTO:
 		target = 0.0
-	_glow = move_toward(_glow, target, delta * 8.0)
+	_glow = move_toward(_glow, target, delta * 4.0)
 	_mat.set_shader_parameter("emission_energy_multiplier", clampf(_glow * _glow_scale, 0.0, 5.0))
 
 

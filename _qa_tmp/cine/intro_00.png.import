@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bmw0ooxdsnfr1"
-path="res://.godot/imported/final_boss_after.png-798b7df69e6d23cc37f89094132fa31b.ctex"
+uid="uid://g7eijgaefk02"
+path="res://.godot/imported/intro_00.png-65338d6febaa81a16bf5728afdf200af.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://_qa_tmp/enemies/final_boss_after.png"
-dest_files=["res://.godot/imported/final_boss_after.png-798b7df69e6d23cc37f89094132fa31b.ctex"]
+source_file="res://_qa_tmp/cine/intro_00.png"
+dest_files=["res://.godot/imported/intro_00.png-65338d6febaa81a16bf5728afdf200af.ctex"]
 
 [params]
 

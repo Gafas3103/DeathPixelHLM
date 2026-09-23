@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dv46avg646nxf"
-path="res://.godot/imported/final_boss_ring_fire.png-aaae9026362eab0545085b085b25d738.ctex"
+uid="uid://c6vvm1ywwf4av"
+path="res://.godot/imported/intro_01.png-44c8a432cf82aeddf451c3793523eb36.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://_qa_tmp/enemies/final_boss_ring_fire.png"
-dest_files=["res://.godot/imported/final_boss_ring_fire.png-aaae9026362eab0545085b085b25d738.ctex"]
+source_file="res://_qa_tmp/cine/intro_01.png"
+dest_files=["res://.godot/imported/intro_01.png-44c8a432cf82aeddf451c3793523eb36.ctex"]
 
 [params]
 

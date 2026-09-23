@@ -71,7 +71,7 @@ func _process(delta: float) -> void:
 	queue_redraw()
 	if _icon != null:
 		_icon.position.y = sin(_time * 2.5) * 1.5
-	if can_pickup and Input.is_action_just_pressed("action"):
+	if can_pickup and Input.is_action_just_pressed("action") and not Global.cutscene_active:
 		read_note()
 
 

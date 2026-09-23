@@ -61,7 +61,7 @@ func _process(delta: float) -> void:
 	if is_open or not _player_near:
 		return
 	_prompt.text = "[E] ABRIR" if (Global.has_key or not requires_key) else "REQUIERE LLAVE"
-	if Input.is_action_just_pressed("action"):
+	if Input.is_action_just_pressed("action") and not Global.cutscene_active:
 		try_open()
 
 

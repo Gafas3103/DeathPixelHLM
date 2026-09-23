@@ -29,6 +29,7 @@ signal boss_health_changed(current: float, maximum: float, phase: int)
 signal boss_defeated
 signal alarm_changed(active: bool, time_left: float)
 signal flashlight_changed(on: bool)
+signal cutscene_changed(active: bool)
 
 # combo: cada baja lo sube y alarga el tiempo para la siguiente
 const COMBO_BASE_WINDOW := 8.0  # segundos que dura tras una baja
@@ -114,6 +115,7 @@ var boss_node: Node = null
 var lights_out: bool = false
 var flashlight_on: bool = false
 var alarm_active: bool = false
+var cutscene_active: bool = false
 
 var _score_at_level_start: int = 0
 var _kills_at_level_start: int = 0
@@ -122,9 +124,10 @@ var _last_detection_time: float = -100.0
 
 func _process(delta: float) -> void:
 	# se pausa con el árbol
-	grace_time = maxf(0.0, grace_time - delta)
-	invuln_time = maxf(0.0, invuln_time - delta)
-	if level_active and health > 0.0:
+	if not cutscene_active:
+		grace_time = maxf(0.0, grace_time - delta)
+		invuln_time = maxf(0.0, invuln_time - delta)
+	if level_active and health > 0.0 and not cutscene_active:
 		level_time += delta
 
 	if combo_time > 0.0:
@@ -172,7 +175,7 @@ func reload_mult() -> float:
 # vida
 
 func take_damage(amount: float) -> void:
-	if health <= 0.0 or invuln_time > 0.0:
+	if health <= 0.0 or invuln_time > 0.0 or cutscene_active:
 		return
 	health = clampf(health - amount, 0.0, max_health)
 	health_changed.emit(health)
@@ -353,6 +356,13 @@ func clear_boss() -> void:
 	boss_defeated.emit()
 
 
+func set_cutscene(active: bool) -> void:
+	if cutscene_active == active:
+		return
+	cutscene_active = active
+	cutscene_changed.emit(active)
+
+
 func set_alarm(active: bool, time_left: float) -> void:
 	alarm_active = active
 	alarm_changed.emit(active, time_left)
@@ -418,6 +428,7 @@ func reset_for_level(mode: int = START_FRESH) -> void:
 	lights_out = false
 	flashlight_on = false
 	alarm_active = false
+	cutscene_active = false
 	_last_detection_time = -100.0
 	grace_time = Settings.spawn_grace()
 	invuln_time = INVULN_AFTER_SPAWN

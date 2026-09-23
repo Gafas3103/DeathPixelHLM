@@ -1,7 +1,0 @@
-[gd_scene format=3]
-
-[ext_resource type="Script" path="res://_qa_tmp/enemies/boss_shots.gd" id="1"]
-
-[node name="BossShots" type="Node"]
-process_mode = 3
-script = ExtResource("1")

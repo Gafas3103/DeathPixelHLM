@@ -1,10 +1,10 @@
 {
   "CTL_01": {
-    "actual": "modo del mouse: partida=4 (3=confinado y oculto), pausa=3 (2=confinado), al reanudar=4, menú=0 (0=visible)",
-    "status": "Pass"
+	"actual": "modo del mouse: partida=4 (3=confinado y oculto), pausa=3 (2=confinado), al reanudar=4, menú=0 (0=visible)",
+	"status": "Pass"
   },
   "STB_03": {
-    "actual": "nivel 3 Difícil (9 enemigos), berserk y ráfagas de escopeta+rifle durante 8 s: FPS promedio 60, mínimo 59; memoria 82 MB",
-    "status": "Pass"
+	"actual": "nivel 3 Difícil (9 enemigos), berserk y ráfagas de escopeta+rifle durante 8 s: FPS promedio 60, mínimo 59; memoria 82 MB",
+	"status": "Pass"
   }
 }

@@ -57,12 +57,17 @@ func _process(_d: float) -> void:
 		return
 	_frames += 1
 	var cs := get_tree().current_scene
-	if _frames == 30 and cs != null:
+	if _frames >= 10 and _frames <= 170 and cs != null:
 		var lv := get_tree().get_first_node_in_group("level")
 		if lv != null:
+			for c in lv.get_children():
+				if "skipped" in c and not c.skipped:
+					c.skipped = true
+					print("  skipped cutscene at frame ", _frames)
 			var b = lv.get("_briefing")
-			if b != null and is_instance_valid(b) and b.has_method("close"):
+			if b != null and is_instance_valid(b) and b.has_method("close") and not b.is_queued_for_deletion():
 				b.close()
+				print("  closed briefing at frame ", _frames, " active=", Global.level_active)
 	if _frames == 180 and cs != null:
 		print("  scene=", cs.name, " enemies=", get_tree().get_nodes_in_group("Enemies").size())
 		if not GameManager.in_tutorial:

@@ -1,8 +1,8 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://Scripts/Enemy/boss.gd" id="1_boss"]
+[ext_resource type="Script" uid="uid://dtqkhwipubvbe" path="res://Scripts/Enemy/boss.gd" id="1_boss"]
 [ext_resource type="Script" uid="uid://dxj0gvvdnmiuu" path="res://Scripts/CharacterVisuals.gd" id="2_visuals"]
-[ext_resource type="Shader" path="res://Shaders/DeathPixelMaterial.gdshader" id="3_shader"]
+[ext_resource type="Shader" uid="uid://cplm7hkmr7sum" path="res://Shaders/DeathPixelMaterial.gdshader" id="3_shader"]
 [ext_resource type="Texture2D" uid="uid://cqorm6rodkng5" path="res://Assest/Enemy/EnemyStop.png" id="4_stop"]
 [ext_resource type="Texture2D" uid="uid://cst6mq4sjg1v6" path="res://Assest/Enemy/EnemyWalk.png" id="5_walk"]
 [ext_resource type="Texture2D" uid="uid://23psl5thuihs" path="res://Assest/Enemy/EnemyAttack.png" id="6_attack"]
@@ -49,12 +49,12 @@ animations = [{
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_boss"]
 resource_local_to_scene = true
 shader = ExtResource("3_shader")
-shader_parameter/albedo_color = Color(0.62, 0.13, 0.19, 1)
+shader_parameter/albedo_color = Color(0.78, 0.2, 0.24, 1)
 shader_parameter/metallic = 0.9
 shader_parameter/roughness = 0.18
 shader_parameter/emission_enabled = true
 shader_parameter/emission = Color(1, 0.08, 0.1, 1)
-shader_parameter/emission_energy_multiplier = 0.55
+shader_parameter/emission_energy_multiplier = 0.25
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_boss"]
 radius = 14.0

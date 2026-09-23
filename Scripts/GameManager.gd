@@ -102,6 +102,7 @@ var in_tutorial: bool = false
 var _start_mode: int = 0  # START_FRESH / CARRY / RETRY de Global
 var _victory: CanvasLayer = null
 var _briefing_pending: bool = false
+var trailer_mode: bool = false
 
 
 func _ready() -> void:

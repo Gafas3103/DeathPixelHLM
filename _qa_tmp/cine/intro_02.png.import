@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://coaa5t0naks5d"
-path="res://.godot/imported/final_tirador_fire.png-ade8982e9c2d4a26db276b7b2114e06d.ctex"
+uid="uid://bby8ydbhjsp0"
+path="res://.godot/imported/intro_02.png-830c27ea46c16db9d2fff07f839d610b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://_qa_tmp/enemies/final_tirador_fire.png"
-dest_files=["res://.godot/imported/final_tirador_fire.png-ade8982e9c2d4a26db276b7b2114e06d.ctex"]
+source_file="res://_qa_tmp/cine/intro_02.png"
+dest_files=["res://.godot/imported/intro_02.png-830c27ea46c16db9d2fff07f839d610b.ctex"]
 
 [params]
 

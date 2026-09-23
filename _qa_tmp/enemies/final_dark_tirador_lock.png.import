@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cek5b6xl8xc5m"
-path="res://.godot/imported/final_boss_stomp.png-d6f5f58277aa9659ce7c92f039b572a9.ctex"
+uid="uid://bmiystqn5j76h"
+path="res://.godot/imported/final_dark_tirador_lock.png-faee77c6cdeb96c630b729b25b9351f6.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://_qa_tmp/enemies/final_boss_stomp.png"
-dest_files=["res://.godot/imported/final_boss_stomp.png-d6f5f58277aa9659ce7c92f039b572a9.ctex"]
+source_file="res://_qa_tmp/enemies/final_dark_tirador_lock.png"
+dest_files=["res://.godot/imported/final_dark_tirador_lock.png-faee77c6cdeb96c630b729b25b9351f6.ctex"]
 
 [params]
 

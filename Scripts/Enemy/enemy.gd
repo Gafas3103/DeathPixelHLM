@@ -152,6 +152,7 @@ var _laser: Line2D = null
 var _laser_glow: Line2D = null
 var _laser_flash: float = 0.0
 var _laser_time: float = 0.0
+var cutscene_velocity: Vector2 = Vector2.ZERO
 
 @onready var anim: AnimatedSprite2D = get_node_or_null("AnimatedSprite2D")
 @onready var body_shape: CollisionShape2D = get_node_or_null("CollisionShape2D")
@@ -240,6 +241,8 @@ func _apply_variant_now(v: int) -> void:
 	var tint := Color.WHITE
 	var size_k := 1.0
 	var glow := NO_GLOW
+	var glow_energy := 0.0
+	var metal := -1.0
 	match v:
 		Variant.PESADO:
 			max_health *= 2.4
@@ -252,7 +255,10 @@ func _apply_variant_now(v: int) -> void:
 			bullet_damage_mult = 0.8
 			can_flee = false
 			size_k = 1.18
-			tint = Color(0.55, 0.68, 0.95)
+			tint = Color(0.5, 0.52, 0.9)
+			glow = Color(0.32, 0.48, 1.0, 1.0)
+			glow_energy = 0.3
+			metal = 1.0
 			kill_points = 150
 		Variant.TIRADOR:
 			vision_range *= 1.7
@@ -265,7 +271,9 @@ func _apply_variant_now(v: int) -> void:
 			bullet_damage_mult = 2.2
 			stop_to_shoot = true
 			has_laser = true
-			tint = Color(0.74, 0.84, 0.46)
+			tint = Color(1.0, 0.9, 0.36)
+			glow = Color(0.62, 0.55, 0.08, 1.0)
+			glow_energy = 0.28
 			kill_points = 130
 		Variant.RAPIDO:
 			speed *= 1.55
@@ -278,16 +286,17 @@ func _apply_variant_now(v: int) -> void:
 			reaction_time *= 0.6
 			can_flee = false
 			size_k = 0.92
-			tint = Color(1.0, 0.5, 0.42)
-			glow = Color(1.0, 0.18, 0.08, 1.0)
+			tint = Color(1.0, 0.42, 0.36)
+			glow = Color(1.0, 0.16, 0.06, 1.0)
+			glow_energy = 0.42
 			kill_points = 120
 	health = max_health
-	_apply_variant_visuals(tint, size_k, glow)
+	_apply_variant_visuals(tint, size_k, glow, glow_energy, metal)
 	if has_laser:
 		_build_laser()
 
 
-func _apply_variant_visuals(tint: Color, size_k: float, glow: Color) -> void:
+func _apply_variant_visuals(tint: Color, size_k: float, glow: Color, glow_energy: float, metal: float) -> void:
 	icon_offset = 26.0 * size_k
 	if body_shape != null and size_k != 1.0:
 		body_shape.scale = Vector2.ONE * size_k
@@ -308,10 +317,13 @@ func _apply_variant_visuals(tint: Color, size_k: float, glow: Color) -> void:
 	mat = mat.duplicate() as ShaderMaterial
 	anim.material = mat
 	mat.set_shader_parameter("albedo_color", tint)
-	if glow.a > 0.0:
+	if metal >= 0.0:
+		mat.set_shader_parameter("metallic", metal)
+		mat.set_shader_parameter("roughness", 0.1)
+	if glow.a > 0.0 and glow_energy > 0.0:
 		mat.set_shader_parameter("emission_enabled", true)
 		mat.set_shader_parameter("emission", glow)
-		mat.set_shader_parameter("emission_energy_multiplier", 0.35)
+		mat.set_shader_parameter("emission_energy_multiplier", glow_energy)
 
 
 func _build_laser() -> void:
@@ -347,6 +359,9 @@ func _physics_process(delta: float) -> void:
 			set_physics_process(false)
 		return
 
+	if _cutscene_hold():
+		return
+
 	_shoot_timer = maxf(0.0, _shoot_timer - delta)
 	_state_time += delta
 
@@ -379,6 +394,24 @@ func _physics_process(delta: float) -> void:
 	_check_stuck(delta)
 	if _laser != null:
 		_update_laser(delta)
+
+
+func _cutscene_hold() -> bool:
+	if not Global.cutscene_active:
+		if _laser != null and not _laser.visible:
+			_laser.visible = true
+			if _laser_glow != null:
+				_laser_glow.visible = true
+		return false
+	velocity = cutscene_velocity
+	if cutscene_velocity.length() > 1.0:
+		_face(global_position + cutscene_velocity)
+	if _laser != null:
+		_laser.visible = false
+		if _laser_glow != null:
+			_laser_glow.visible = false
+	move_and_slide()
+	return true
 
 
 func is_alive() -> bool:

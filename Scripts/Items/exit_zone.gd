@@ -39,7 +39,7 @@ func _process(delta: float) -> void:
 	else:
 		_boss_lock = maxf(0.0, _boss_lock - delta)
 	queue_redraw()
-	if _done or not _unlocked() or Global.health <= 0.0:
+	if _done or not _unlocked() or Global.health <= 0.0 or Global.cutscene_active:
 		return
 	for body in get_overlapping_bodies():
 		if body.is_in_group("player"):
@@ -48,7 +48,7 @@ func _process(delta: float) -> void:
 
 
 func _on_body_entered(body: Node2D) -> void:
-	if _done or not body.is_in_group("player") or Global.health <= 0.0:
+	if _done or not body.is_in_group("player") or Global.health <= 0.0 or Global.cutscene_active:
 		return
 	if requires_key and not Global.has_key:
 		_warn("NECESITAS LA LLAVE PARA SALIR")
@@ -71,6 +71,9 @@ func _warn(text: String) -> void:
 func _finish() -> void:
 	_done = true
 	var level := get_tree().get_first_node_in_group("level")
+	if level != null and level.has_method("play_outro"):
+		level.call_deferred("play_outro")
+		return
 	if level != null and level.has_method("end_twists"):
 		level.end_twists()
 	GameManager.complete_level()

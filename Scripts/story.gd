@@ -161,6 +161,68 @@ const TWIST_START := {
 	"caceria": [["CENTRAL", "Cada cierto tiempo delatan tu posición. Mantente en movimiento."]],
 }
 
+const CHAPTER_SLOGANS: Array[String] = [
+	"ELLOS TIENEN NÚMEROS. YO TENGO UNA RAZÓN.",
+	"LA OSCURIDAD TAMBIÉN JUEGA DE MI LADO.",
+	"NO HAY RETIRADA.",
+	"EL CAZADOR AHORA ES LA PRESA.",
+	"POR CADA PUNTO ROJO QUE APAGÓ.",
+]
+
+const CUTSCENE_INTRO := [
+	[
+		["CENTRAL", "Última oportunidad para dar la vuelta, Vega. Nadie te lo reprocharía."],
+		["VEGA", "No vine hasta aquí para dar la vuelta, Ríos. Entro."],
+	],
+	[
+		["CENTRAL", "Cortaron la luz de todo el complejo. Saben que vienes."],
+		["VEGA", "Que esperen a oscuras. Yo ya me acostumbré."],
+	],
+	[
+		["CENTRAL", "Si suena esa alarma, tendrás a todo su ejército encima."],
+		["VEGA", "Entonces que suene. Que sepan que ya estoy aquí."],
+	],
+	[
+		["CENTRAL", "Te vendieron otra vez. Todos saben dónde estás."],
+		["VEGA", "Mejor. Así no tengo que ir a buscarlos."],
+	],
+	[
+		["CENTRAL", "Esta es la última puerta, Vega. Después de esto no hay vuelta atrás."],
+		["VEGA", "Nunca la hubo."],
+	],
+]
+
+const CUTSCENE_OUTRO := [
+	[["VEGA", "Uno menos. Voy por ti, Contratista."]],
+	[["VEGA", "Cada paso en la oscuridad me acerca más a él."]],
+	[["VEGA", "Se le están acabando los escondites."]],
+	[["VEGA", "Ya no queda nadie entre él y yo."]],
+	[["VEGA", "Por ellos."]],
+]
+
+const BOSS_LEVEL_OUTRO := [
+	["VEGA", "Por ellos. Por todos los puntos rojos."],
+]
+
+const BOSS_ENTRANCE := [
+	["CONTRATISTA", "Tanto ruido por un solo píxel, agente."],
+	["CONTRATISTA", "Vine a apagarte yo mismo."],
+	["VEGA", "Y yo vine a apagar tu pantalla."],
+]
+
+const BOSS_LAST_WORDS := [
+	["CONTRATISTA", "Apágame... si quieres. Hay mil pantallas... como la mía."],
+	["VEGA", "Entonces apagaré mil."],
+	["CENTRAL", "Se acabó, Vega. Llega a la salida, voy por ti."],
+]
+
+const THREAT_LABELS := {
+	"soldado": "ARMADO",
+	"pesado": "PESADO",
+	"tirador": "TIRADOR",
+	"rapido": "RÁPIDO",
+}
+
 
 static func chapter(index: int) -> Dictionary:
 	if index < 0 or index >= CHAPTERS.size():
