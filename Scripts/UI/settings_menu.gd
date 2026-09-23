@@ -192,6 +192,10 @@ func _build_graphics() -> void:
 		func(v: float) -> String: return "%d%%" % roundi(v))
 	_add_row("BRILLO", bright[0], "Oscurece o aclara todo el juego. 100% es el valor normal.", bright[1])
 
+	var lighting := _option(Settings.LIGHTING_QUALITIES, Settings.lighting_quality)
+	lighting.item_selected.connect(Settings.set_lighting_quality)
+	_add_row("ILUMINACIÓN", lighting, "BAJA: sin oscuridad ni luces, como el juego original; para equipos lentos. MEDIA: atardecer, noche y apagón con linterna y luces de colores, sin sombras. ALTA: además las paredes bloquean la luz y proyectan sombras. Se aplica al momento.")
+
 	var show_fps := _check(Settings.show_fps)
 	show_fps.toggled.connect(Settings.set_show_fps)
 	_add_row("MOSTRAR FPS", show_fps, "Muestra los cuadros por segundo en la parte superior de la pantalla.", null, false)

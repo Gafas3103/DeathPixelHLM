@@ -36,6 +36,14 @@ var _shake: float = 0.0
 var _debug_tick: float = 0.0
 var _time: float = 0.0
 
+var light_visibility: float:
+	get:
+		if not Global.lights_out:
+			return 1.0
+		if Global.flashlight_on or _shot_glow > 0.0:
+			return 1.0
+		return 0.5
+
 @onready var camera: Camera2D = get_node_or_null("Camera2D")
 @onready var visuals = get_node_or_null("Visuals")
 
@@ -47,6 +55,7 @@ class Slash extends Node2D:
 
 	func _init() -> void:
 		z_index = 60
+		light_mask = 0
 		var mat := CanvasItemMaterial.new()
 		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 		material = mat
@@ -127,7 +136,7 @@ func _physics_process(delta):
 	_handle_shoot(delta)
 
 	# teclas de prueba (solo desde el editor): J daño, H curar
-	if OS.is_debug_build():
+	if OS.has_feature("editor"):
 		_debug_tick = maxf(0.0, _debug_tick - delta)
 		if _debug_tick <= 0.0:
 			if Input.is_key_pressed(KEY_J):
@@ -155,21 +164,44 @@ func _physics_process(delta):
 	if _shot_glow > 0.0:
 		noise_level = maxf(noise_level, 1.6)
 
-	if velocity.length() > 0:
-		$AnimatedSprite2D.play("walk")
-	else:
-		$AnimatedSprite2D.play("idle")
+	if visuals == null:
+		if velocity.length() > 0:
+			$AnimatedSprite2D.play("walk")
+		else:
+			$AnimatedSprite2D.play("idle")
 
 	move_and_slide()
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("flashlight") and not event.is_echo():
+		if Global.health > 0:
+			_toggle_flashlight()
+		get_viewport().set_input_as_handled()
+		return
 	var mouse := event as InputEventMouseButton
 	if mouse != null and mouse.pressed and Global.health > 0:
 		if mouse.button_index == MOUSE_BUTTON_WHEEL_UP:
 			_switch_weapon(posmod(Global.current_weapon - 1, Weapons.LIST.size()))
 		elif mouse.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			_switch_weapon(posmod(Global.current_weapon + 1, Weapons.LIST.size()))
+
+
+func _toggle_flashlight() -> void:
+	var lighting := get_tree().get_first_node_in_group("level_lighting")
+	var available := Global.lights_out
+	if lighting != null and lighting.has_method("has_flashlight"):
+		available = available or bool(lighting.call("has_flashlight"))
+	if not available:
+		Global.show_message("AQUÍ HAY LUZ: NO NECESITAS LA LINTERNA")
+		return
+	Global.set_flashlight(not Global.flashlight_on)
+	if Global.flashlight_on:
+		Global.show_message("LINTERNA ENCENDIDA [%s]" % Settings.key_name("flashlight"))
+	elif Global.lights_out:
+		Global.show_message("LINTERNA APAGADA: CASI NO TE VEN, PERO DISPARAR TE DELATA")
+	else:
+		Global.show_message("LINTERNA APAGADA [%s]" % Settings.key_name("flashlight"))
 
 
 # armas
@@ -346,6 +378,7 @@ func heal(amount: float) -> void:
 ## partículas alrededor del jugador (rising = suben)
 func _burst(color: Color, count: int, speed_max: float, rising: bool = false) -> void:
 	var p := CPUParticles2D.new()
+	p.light_mask = 0
 	p.emitting = false
 	p.one_shot = true
 	p.explosiveness = 0.9

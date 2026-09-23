@@ -1,0 +1,102 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/Enemy/boss.gd" id="1_boss"]
+[ext_resource type="Script" uid="uid://dxj0gvvdnmiuu" path="res://Scripts/CharacterVisuals.gd" id="2_visuals"]
+[ext_resource type="Shader" path="res://Shaders/DeathPixelMaterial.gdshader" id="3_shader"]
+[ext_resource type="Texture2D" uid="uid://cqorm6rodkng5" path="res://Assest/Enemy/EnemyStop.png" id="4_stop"]
+[ext_resource type="Texture2D" uid="uid://cst6mq4sjg1v6" path="res://Assest/Enemy/EnemyWalk.png" id="5_walk"]
+[ext_resource type="Texture2D" uid="uid://23psl5thuihs" path="res://Assest/Enemy/EnemyAttack.png" id="6_attack"]
+[ext_resource type="Texture2D" uid="uid://c0ppgpqbsedjq" path="res://Assest/Enemy/EnemyDead.png" id="7_dead"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_boss"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_attack")
+}],
+"loop": false,
+"name": &"Attack",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7_dead")
+}],
+"loop": false,
+"name": &"Dead",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_stop")
+}],
+"loop": true,
+"name": &"Stop",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_walk")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_stop")
+}],
+"loop": true,
+"name": &"Walk",
+"speed": 7.0
+}]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_boss"]
+resource_local_to_scene = true
+shader = ExtResource("3_shader")
+shader_parameter/albedo_color = Color(0.62, 0.13, 0.19, 1)
+shader_parameter/metallic = 0.9
+shader_parameter/roughness = 0.18
+shader_parameter/emission_enabled = true
+shader_parameter/emission = Color(1, 0.08, 0.1, 1)
+shader_parameter/emission_energy_multiplier = 0.55
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_boss"]
+radius = 14.0
+
+[node name="Boss" type="CharacterBody2D" groups=["Enemies", "boss"]]
+collision_layer = 4
+collision_mask = 3
+motion_mode = 1
+script = ExtResource("1_boss")
+behavior = 2
+speed = 95.0
+acceleration = 800.0
+friction = 1000.0
+max_health = 1600.0
+knockback = 6.0
+can_flee = false
+vision_range = 600.0
+vision_angle = 360.0
+attack_range = 400.0
+fire_rate = 1.0
+reaction_time = 0.3
+muzzle_distance = 34.0
+spread_degrees = 3.0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+material = SubResource("ShaderMaterial_boss")
+scale = Vector2(0.1186, 0.1029)
+sprite_frames = SubResource("SpriteFrames_boss")
+animation = &"Stop"
+autoplay = "Stop"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_boss")
+
+[node name="Visuals" type="Node2D" parent="."]
+script = ExtResource("2_visuals")
+recoil_distance = 5.0
+recoil_squash = 0.05
+muzzle_offset = Vector2(42, -3)
+flash_size = 16.0
+flash_color = Color(1, 0.25, 0.2, 1)
+eject_shell = false
+
+[node name="VisionRay" type="RayCast2D" parent="."]
+target_position = Vector2(0, 50)

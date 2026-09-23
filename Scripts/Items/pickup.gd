@@ -19,6 +19,7 @@ var _age: float = 0.0
 
 func _ready() -> void:
 	add_to_group("pickups")
+	light_mask = 0
 	collision_layer = 0
 	collision_mask = 2
 

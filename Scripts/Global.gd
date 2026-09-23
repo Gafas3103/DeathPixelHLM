@@ -23,6 +23,12 @@ signal message(text: String)
 signal enemy_killed(position: Vector2)
 ## ruido que los enemigos pueden oír (origen, radio, y a dónde van a mirar)
 signal noise_made(origin: Vector2, radius: float, investigate_at: Vector2)
+signal radio_message(speaker: String, text: String)
+signal boss_spawned(boss: Node)
+signal boss_health_changed(current: float, maximum: float, phase: int)
+signal boss_defeated
+signal alarm_changed(active: bool, time_left: float)
+signal flashlight_changed(on: bool)
 
 # combo: cada baja lo sube y alarga el tiempo para la siguiente
 const COMBO_BASE_WINDOW := 8.0  # segundos que dura tras una baja
@@ -98,14 +104,28 @@ var invuln_time: float = 0.0  # mientras sea > 0 no recibes daño
 var has_key: bool = false
 var objective: String = ""
 
+var level_active: bool = false
+var level_time: float = 0.0
+var times_detected: int = 0
+var deaths_this_level: int = 0
+var stealth_kills: int = 0
+var boss_alive: bool = false
+var boss_node: Node = null
+var lights_out: bool = false
+var flashlight_on: bool = false
+var alarm_active: bool = false
+
 var _score_at_level_start: int = 0
 var _kills_at_level_start: int = 0
+var _last_detection_time: float = -100.0
 
 
 func _process(delta: float) -> void:
 	# se pausa con el árbol
 	grace_time = maxf(0.0, grace_time - delta)
 	invuln_time = maxf(0.0, invuln_time - delta)
+	if level_active and health > 0.0:
+		level_time += delta
 
 	if combo_time > 0.0:
 		combo_time -= delta
@@ -161,6 +181,7 @@ func take_damage(amount: float) -> void:
 		combo = 1
 		combo_time = 0.0
 		combo_changed.emit(combo, 0.0)
+		deaths_this_level += 1
 		player_died.emit()
 
 
@@ -294,6 +315,49 @@ func make_noise(origin: Vector2, radius: float, investigate_at: Vector2) -> void
 	noise_made.emit(origin, radius, investigate_at)
 
 
+func radio(speaker: String, text: String) -> void:
+	radio_message.emit(speaker, text)
+
+
+func register_detection() -> void:
+	if not level_active:
+		return
+	if level_time - _last_detection_time > 4.0:
+		times_detected += 1
+	_last_detection_time = level_time
+
+
+func register_stealth_kill() -> void:
+	stealth_kills += 1
+
+
+func set_flashlight(on: bool) -> void:
+	if flashlight_on == on:
+		return
+	flashlight_on = on
+	flashlight_changed.emit(on)
+
+
+func set_boss(boss: Node) -> void:
+	boss_node = boss
+	boss_alive = boss != null
+	if boss != null:
+		boss_spawned.emit(boss)
+
+
+func clear_boss() -> void:
+	if not boss_alive:
+		return
+	boss_alive = false
+	boss_node = null
+	boss_defeated.emit()
+
+
+func set_alarm(active: bool, time_left: float) -> void:
+	alarm_active = active
+	alarm_changed.emit(active, time_left)
+
+
 # respawn y reinicio
 
 func respawn() -> void:
@@ -344,6 +408,17 @@ func reset_for_level(mode: int = START_FRESH) -> void:
 	has_key = false
 	reloading = false
 	objective = ""
+	level_active = false
+	level_time = 0.0
+	times_detected = 0
+	deaths_this_level = 0
+	stealth_kills = 0
+	boss_alive = false
+	boss_node = null
+	lights_out = false
+	flashlight_on = false
+	alarm_active = false
+	_last_detection_time = -100.0
 	grace_time = Settings.spawn_grace()
 	invuln_time = INVULN_AFTER_SPAWN
 	_score_at_level_start = score

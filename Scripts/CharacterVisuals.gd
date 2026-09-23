@@ -37,6 +37,7 @@ var _sprite: AnimatedSprite2D = null
 var _sprite_home := Vector2.ZERO
 var _sprite_home_scale := Vector2.ONE
 var _flash: Node2D = null
+var _flash_light: PointLight2D = null
 var _recoil_tween: Tween = null
 var _hit_tween: Tween = null
 var _shoot_timer: float = 0.0
@@ -201,16 +202,19 @@ func _build_flash() -> void:
 	_flash.name = "MuzzleFlash"
 	_flash.position = muzzle_offset
 	_flash.visible = false
+	_flash.light_mask = 0
 	add_child(_flash)
 
 	var glow := Polygon2D.new()
 	glow.polygon = _star_points(flash_size, 1.8)
 	glow.color = flash_color
+	glow.light_mask = 0
 	_flash.add_child(glow)
 
 	var core := Polygon2D.new()
 	core.polygon = _star_points(flash_size * 0.45, 1.6)
 	core.color = Color(1.0, 1.0, 0.95, 1.0)
+	core.light_mask = 0
 	_flash.add_child(core)
 
 
@@ -233,9 +237,35 @@ func _do_flash() -> void:
 	_flash.rotation = randf_range(-0.35, 0.35)
 	_flash.scale = Vector2.ONE * randf_range(0.8, 1.25)
 
+	var lit := _update_flash_light()
 	var t := create_tween()
 	t.tween_property(_flash, "modulate:a", 0.0, flash_time)
+	if lit:
+		t.parallel().tween_property(_flash_light, "energy", 0.25, flash_time)
 	t.tween_callback(_hide_flash)
+
+
+func _update_flash_light() -> bool:
+	if not is_inside_tree():
+		return false
+	var lighting := get_tree().get_first_node_in_group(&"level_lighting")
+	var active := lighting != null and lighting.has_method(&"is_active") and bool(lighting.call(&"is_active"))
+	if not active:
+		if _flash_light != null:
+			_flash_light.enabled = false
+		return false
+	if _flash_light == null:
+		_flash_light = PointLight2D.new()
+		_flash_light.name = "LuzFogonazo"
+		_flash_light.texture = lighting.call(&"radial_texture")
+		_flash_light.texture_scale = clampf(flash_size / 9.0, 0.8, 2.0)
+		_flash_light.color = flash_color
+		_flash_light.blend_mode = Light2D.BLEND_MODE_ADD
+		_flash_light.range_item_cull_mask = 1
+		_flash.add_child(_flash_light)
+	_flash_light.enabled = true
+	_flash_light.energy = 1.6
+	return true
 
 
 func _hide_flash() -> void:
@@ -245,6 +275,7 @@ func _hide_flash() -> void:
 
 func _eject_shell() -> void:
 	var shell := CPUParticles2D.new()
+	shell.light_mask = 0
 	shell.emitting = false
 	shell.one_shot = true
 	shell.explosiveness = 1.0

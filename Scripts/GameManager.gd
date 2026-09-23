@@ -18,30 +18,82 @@ const LEVELS := [
 		"preview": "res://Assest/UI/preview_nivel1.png",
 		"desc": "Una calle tomada por hombres armados. Elimina a todos: el último en caer suelta la llave. Con ella abre el cuarto del sur para extraer.",
 		"enemies": [2, 3, 5],
+		"twist": "",
+		"mood": "atardecer",
+		"variants": {"pesado": 1},
+		"boss": false,
+		"par_time": 150.0,
 	},
 	{
 		"name": "COMPLEJO INDUSTRIAL",
 		"scene": "res://Scenes/Levels/Level2.tscn",
 		"preview": "res://Assest/UI/preview_nivel2.png",
-		"desc": "Naves amplias y pasillos largos. El último enemigo suelta la llave; la salida está en la esquina norte.",
+		"desc": "Naves amplias y pasillos largos, sin electricidad. El último enemigo suelta la llave; la salida está en la esquina norte.",
 		"enemies": [3, 5, 7],
+		"twist": "apagon",
+		"mood": "apagon",
+		"variants": {"tirador": 2, "pesado": 1},
+		"boss": false,
+		"par_time": 210.0,
 	},
 	{
 		"name": "EDIFICIO DE CUARTOS",
 		"scene": "res://Scenes/Levels/Level3.tscn",
 		"preview": "res://Assest/UI/preview_nivel3.png",
-		"desc": "Seis habitaciones conectadas por un pasillo, con patrullas y torretas. La llave la suelta el último enemigo de afuera y abre la sala del fondo, custodiada por un guardia.",
+		"desc": "Seis habitaciones conectadas por un pasillo, con patrullas y torretas. Al tomar la llave salta la alarma: llegan refuerzos y el reloj corre.",
 		"enemies": [4, 6, 9],
+		"twist": "alarma",
+		"mood": "noche",
+		"variants": {"rapido": 2, "pesado": 1, "tirador": 1},
+		"boss": false,
+		"par_time": 240.0,
 	},
-	{"name": "PRÓXIMAMENTE", "scene": "", "preview": "", "desc": "Este nivel todavía está en desarrollo.", "enemies": [0, 0, 0]},
-	{"name": "PRÓXIMAMENTE", "scene": "", "preview": "", "desc": "Este nivel todavía está en desarrollo.", "enemies": [0, 0, 0]},
+	{
+		"name": "LOS MUELLES",
+		"scene": "res://Scenes/Levels/Level4.tscn",
+		"preview": "res://Assest/UI/preview_nivel4.png",
+		"desc": "Contenedores, grúas y niebla. Te están cazando: cada cierto tiempo delatan tu posición a todos.",
+		"enemies": [5, 7, 10],
+		"twist": "caceria",
+		"mood": "noche",
+		"variants": {"rapido": 2, "tirador": 2, "pesado": 1},
+		"boss": false,
+		"par_time": 270.0,
+	},
+	{
+		"name": "LA SEDE",
+		"scene": "res://Scenes/Levels/Level5.tscn",
+		"preview": "res://Assest/UI/preview_nivel5.png",
+		"desc": "La torre donde El Contratista reparte sus encargos. Él te espera al final.",
+		"enemies": [6, 8, 11],
+		"twist": "sede",
+		"mood": "sede",
+		"variants": {"pesado": 2, "tirador": 2, "rapido": 2},
+		"boss": true,
+		"par_time": 330.0,
+	},
 ]
+
+const TWISTS := {
+	"": {"name": "ASALTO", "desc": "Limpia la zona, toma la llave y extrae."},
+	"apagon": {"name": "APAGÓN", "desc": "No hay luz. Con la linterna apagada [L] casi no te ven, pero tú tampoco ves mucho. Disparar te delata."},
+	"alarma": {"name": "ALARMA", "desc": "Al tomar la llave salta la alarma: llegan refuerzos y tienes poco tiempo para salir."},
+	"caceria": {"name": "CACERÍA", "desc": "Un informante delata tu posición cada cierto tiempo. No te quedes quieto."},
+	"sede": {"name": "LA SEDE", "desc": "Territorio del Contratista. Sus mejores hombres y él mismo."},
+}
+
+const RANKS: Array[String] = ["C", "B", "A", "S"]
 
 ## nivel más alto desbloqueado; el 1 siempre está abierto
 var unlocked_index: int = 0
 ## nivel actual, -1 en un menú
 var current_index: int = -1
 var best_scores: Dictionary = {}  # "0" -> mejor puntaje
+var best_ranks: Dictionary = {}
+var prologue_seen: bool = false
+var game_completed: bool = false
+var last_rank: String = ""
+var last_rank_new_best: bool = false
 ## ¿ya hizo el tutorial? si no, el menú lo recomienda
 var tutorial_done: bool = false
 ## true en el tutorial (el reinicio vuelve a cargarlo)
@@ -49,6 +101,7 @@ var in_tutorial: bool = false
 
 var _start_mode: int = 0  # START_FRESH / CARRY / RETRY de Global
 var _victory: CanvasLayer = null
+var _briefing_pending: bool = false
 
 
 func _ready() -> void:
@@ -79,11 +132,86 @@ func is_unlocked(index: int) -> bool:
 
 
 func has_next_level() -> bool:
-	return current_index >= 0 and is_playable(current_index + 1)
+	if current_index < 0 or is_final_level(current_index):
+		return false
+	return is_playable(current_index + 1)
 
 
 func best_score(index: int) -> int:
 	return int(best_scores.get(str(index), 0))
+
+
+func best_rank(index: int) -> String:
+	return String(best_ranks.get(str(index), ""))
+
+
+func level_data(index: int) -> Dictionary:
+	if index < 0 or index >= LEVELS.size():
+		return {}
+	return LEVELS[index]
+
+
+func twist_info(index: int) -> Dictionary:
+	var key := String(level_data(index).get("twist", ""))
+	return TWISTS.get(key, TWISTS[""])
+
+
+func boss_level_index() -> int:
+	var last := -1
+	for i in range(LEVELS.size()):
+		if not is_playable(i):
+			continue
+		if bool(LEVELS[i].get("boss", false)):
+			return i
+		last = i
+	return last
+
+
+func is_boss_level(index: int) -> bool:
+	return index >= 0 and index == boss_level_index()
+
+
+func is_final_level(index: int) -> bool:
+	return is_boss_level(index)
+
+
+func take_briefing() -> bool:
+	var pending := _briefing_pending
+	_briefing_pending = false
+	return pending
+
+
+func compute_rank() -> String:
+	var par := float(level_data(current_index).get("par_time", 180.0))
+	var points := 0
+	var ratio := Global.level_time / maxf(par, 1.0)
+	if ratio <= 1.0:
+		points += 3
+	elif ratio <= 1.5:
+		points += 2
+	elif ratio <= 2.2:
+		points += 1
+	if Global.deaths_this_level == 0:
+		points += 2
+	elif Global.deaths_this_level == 1:
+		points += 1
+	if Global.times_detected == 0:
+		points += 3
+	elif Global.times_detected <= 2:
+		points += 2
+	elif Global.times_detected <= 5:
+		points += 1
+	if points >= 7:
+		return "S"
+	if points >= 5:
+		return "A"
+	if points >= 3:
+		return "B"
+	return "C"
+
+
+func rank_value(rank: String) -> int:
+	return RANKS.find(rank)
 
 
 # navegación
@@ -107,6 +235,7 @@ func start_level(index: int, mode: int = 0) -> void:
 	in_tutorial = false
 	current_index = index
 	_start_mode = mode
+	_briefing_pending = mode != Global.START_RETRY
 	_change_scene(LEVELS[index]["scene"])
 
 
@@ -152,8 +281,20 @@ func go_to_level_select() -> void:
 
 func _change_scene(path: String) -> void:
 	_close_victory()
+	Engine.time_scale = 1.0
+	Global.level_active = false
 	get_tree().paused = false
 	get_tree().change_scene_to_file(path)
+
+
+func mark_prologue_seen() -> void:
+	prologue_seen = true
+	_save_progress()
+
+
+func mark_game_completed() -> void:
+	game_completed = true
+	_save_progress()
 
 
 ## la llama Level al cargarse (también sirve con F6)
@@ -168,9 +309,16 @@ func begin_level(index: int) -> void:
 func complete_level() -> void:
 	if _victory != null:
 		return
+	Global.level_active = false
 	var key := str(current_index)
 	if Global.score > int(best_scores.get(key, 0)):
 		best_scores[key] = Global.score
+	last_rank = compute_rank()
+	last_rank_new_best = rank_value(last_rank) > rank_value(best_rank(current_index))
+	if last_rank_new_best:
+		best_ranks[key] = last_rank
+	if is_final_level(current_index):
+		game_completed = true
 	# solo se desbloquea el siguiente si existe
 	if current_index + 1 > unlocked_index and is_playable(current_index + 1):
 		unlocked_index = current_index + 1
@@ -192,6 +340,9 @@ func reset_progress() -> void:
 	tutorial_done = false
 	unlocked_index = 0
 	best_scores.clear()
+	best_ranks.clear()
+	prologue_seen = false
+	game_completed = false
 	_save_progress()
 
 
@@ -200,6 +351,9 @@ func _save_progress() -> void:
 	cfg.set_value("progress", "unlocked_index", unlocked_index)
 	cfg.set_value("progress", "best_scores", best_scores)
 	cfg.set_value("progress", "tutorial_done", tutorial_done)
+	cfg.set_value("progress", "best_ranks", best_ranks)
+	cfg.set_value("progress", "prologue_seen", prologue_seen)
+	cfg.set_value("progress", "game_completed", game_completed)
 	cfg.save(SAVE_PATH)
 
 
@@ -215,3 +369,8 @@ func _load_progress() -> void:
 	var scores: Variant = cfg.get_value("progress", "best_scores", {})
 	if scores is Dictionary:
 		best_scores = scores
+	var ranks: Variant = cfg.get_value("progress", "best_ranks", {})
+	if ranks is Dictionary:
+		best_ranks = ranks
+	prologue_seen = bool(cfg.get_value("progress", "prologue_seen", false))
+	game_completed = bool(cfg.get_value("progress", "game_completed", false))

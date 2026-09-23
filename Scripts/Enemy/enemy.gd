@@ -1,24 +1,21 @@
 extends CharacterBody2D
 
-## Enemigo. Los comportamientos (INERTE, TORRETA, PATRULLA, PERSEGUIR) y los estados están en el README.
-##
-## No te detecta al instante: mientras te ve sube `awareness` de 0 a 1 (más rápido si estás
-## cerca, te mueves o disparas; más lento con Shift). Por su punto ciego casi no te nota.
-## El camino sale de level.find_path(); si la escena no es un Level camina en línea recta.
-
 const FloatingText := preload("res://Scripts/floating_text.gd")
 const UIStyle := preload("res://Scripts/UI/ui_style.gd")
 const BALA_ENEMY_PATH := "res://Scenes/BalaEnemy.tscn"
 var _bala_enemy: PackedScene = null
 
 enum Behavior { TORRETA, PATRULLA, PERSEGUIR, INERTE }
-# no cambiar el orden, las escenas guardan el número
 enum State { PATRULLA, ATACAR, VOLVER, MUERTO, INVESTIGAR, HUIR }
+enum Variant { SOLDADO, PESADO, TIRADOR, RAPIDO }
 
 const NO_POINT := Vector2(1.0e9, 1.0e9)
+const VARIANT_KEYS: Array[String] = ["soldado", "pesado", "tirador", "rapido"]
+const LASER_LEAD := 0.6
+const LASER_LOCK := 0.18
+const NO_GLOW := Color(0.0, 0.0, 0.0, 0.0)
 
 
-## anillo que se llena, ? al sospechar y ! al detectarte
 class AwarenessIcon extends Node2D:
 	var enemy: Node = null
 	var _time: float = 0.0
@@ -26,13 +23,14 @@ class AwarenessIcon extends Node2D:
 	func _init() -> void:
 		top_level = true
 		z_index = 120
+		light_mask = 0
 
 	func _process(delta: float) -> void:
 		if enemy == null or not is_instance_valid(enemy):
 			queue_free()
 			return
 		_time += delta
-		global_position = enemy.global_position + Vector2(0, -26)
+		global_position = enemy.global_position + Vector2(0, -float(enemy.icon_offset))
 		queue_redraw()
 
 	func _draw() -> void:
@@ -60,25 +58,20 @@ class AwarenessIcon extends Node2D:
 			draw_string_outline(font, Vector2(-4, 5), "?", HORIZONTAL_ALIGNMENT_CENTER, 8, 14, 4, Color(0, 0, 0, 0.9))
 			draw_string(font, Vector2(-4, 5), "?", HORIZONTAL_ALIGNMENT_CENTER, 8, 14, col)
 
+
 @export_group("Comportamiento")
-## tipo de enemigo
 @export var behavior: Behavior = Behavior.PERSEGUIR
+@export var variant: Variant = Variant.SOLDADO
 
 @export_group("Patrulla")
-## píxeles hacia cada lado de donde lo pongas (en PERSEGUIR es el radio de merodeo)
 @export var patrol_distance: float = 300.0
-## 0 = horizontal, 90 = vertical
 @export_range(-180.0, 180.0, 1.0) var patrol_angle_degrees: float = 0.0
 @export var patrol_speed: float = 70.0
-## pausa en cada extremo
 @export var patrol_wait: float = 0.7
-## puntos de ruta (desplazamientos desde su posición); reemplaza a la línea recta
 @export var route: Array[Vector2] = []
 
 @export_group("Torreta")
-## grados que barre; 0 = mira al frente
 @export_range(0.0, 360.0, 1.0) var turret_sweep_degrees: float = 90.0
-## segundos por barrido completo
 @export var turret_sweep_time: float = 4.0
 
 @export_group("Movimiento")
@@ -88,47 +81,40 @@ class AwarenessIcon extends Node2D:
 
 @export_group("Vida")
 @export var max_health: float = 60.0
-## empuje al recibir un balazo
 @export var knockback: float = 90.0
-## con poca vida huye (menos las torretas)
 @export var can_flee: bool = true
-## fracción de vida a la que huye
 @export_range(0.0, 1.0, 0.05) var flee_health_ratio: float = 0.3
 
 @export_group("Percepción")
 @export var vision_range: float = 260.0
-## cono de visión en grados, 360 ve todo
 @export_range(10.0, 360.0, 1.0) var vision_angle: float = 140.0
-## segundos que busca tras perderte
 @export var give_up_time: float = 3.0
-## radio (px) en el que avisa a otros enemigos
 @export var alert_radius: float = 260.0
 
 @export_group("Combate")
-## solo PERSEGUIR: distancia a la que deja de acercarse y dispara
 @export var attack_range: float = 220.0
-## segundos entre disparos
 @export var fire_rate: float = 0.9
-## retardo antes del primer disparo
 @export var reaction_time: float = 0.45
-## de dónde sale la bala
 @export var muzzle_distance: float = 30.0
-## dispersión en grados
 @export var spread_degrees: float = 6.0
-## true = se planta a disparar, false = dispara mientras camina
 @export var stop_to_shoot: bool = true
 
 @export_group("Dificultad")
-## dificultad mínima: 0 siempre, 1 Normal y Difícil, 2 solo Difícil
 @export_enum("Siempre", "Normal y Difícil", "Solo Difícil") var appears_from: int = 0
-## custodio de la sala de la puerta: no suelta la llave (si no, quedaría encerrada)
 @export var guards_exit: bool = false
 
 var health: float = 0.0
 var state: int = State.PATRULLA
-
-## 0 = no sabe nada, 1 = te detectó
 var awareness: float = 0.0
+var icon_offset: float = 26.0
+var kill_points: int = 100
+var pellets: int = 1
+var fan_degrees: float = 0.0
+var bullet_speed_mult: float = 1.0
+var bullet_damage_mult: float = 1.0
+var has_laser: bool = false
+
+var _variant_applied: bool = false
 var _seen_now: bool = false
 var _peak_awareness: float = 0.0
 var _stealth_kill: bool = false
@@ -162,6 +148,11 @@ var _path_goal: Vector2 = NO_POINT
 var _repath_timer: float = 0.0
 var _level: Node = null
 
+var _laser: Line2D = null
+var _laser_glow: Line2D = null
+var _laser_flash: float = 0.0
+var _laser_time: float = 0.0
+
 @onready var anim: AnimatedSprite2D = get_node_or_null("AnimatedSprite2D")
 @onready var body_shape: CollisionShape2D = get_node_or_null("CollisionShape2D")
 @onready var vision_area: Area2D = get_node_or_null("VisionArea")
@@ -171,7 +162,6 @@ var _level: Node = null
 
 
 func _ready() -> void:
-	# en dificultades bajas no existe
 	if Settings.difficulty < appears_from:
 		remove_from_group("Enemies")
 		process_mode = Node.PROCESS_MODE_DISABLED
@@ -187,7 +177,6 @@ func _ready() -> void:
 
 	set_collision_mask_value(3, true)
 
-	# ya no se usan, la vista es distancia + rayo
 	if vision_area != null:
 		vision_area.set_deferred("monitoring", false)
 	if hearing_area != null:
@@ -195,10 +184,12 @@ func _ready() -> void:
 
 	if vision_ray != null:
 		vision_ray.enabled = true
-		# el rayo solo choca con paredes
 		vision_ray.collision_mask = 1
 
-	# INERTE: todo apagado
+	if variant != Variant.SOLDADO:
+		var wanted: int = variant
+		_apply_variant_now(wanted)
+
 	if behavior == Behavior.INERTE:
 		if vision_ray != null:
 			vision_ray.enabled = false
@@ -214,7 +205,6 @@ func _ready() -> void:
 		global_rotation = _patrol_axis().angle()
 
 
-## aplica la tabla de dificultad
 func _apply_difficulty() -> void:
 	vision_range *= Settings.diff("vision_range")
 	vision_angle = minf(vision_angle * Settings.diff("vision_angle"), 360.0)
@@ -227,10 +217,134 @@ func _apply_difficulty() -> void:
 	max_health *= Settings.diff("health")
 
 
+func variant_key() -> String:
+	return VARIANT_KEYS[clampi(int(variant), 0, VARIANT_KEYS.size() - 1)]
+
+
+func apply_variant(v: int) -> void:
+	if _variant_applied:
+		return
+	if v <= Variant.SOLDADO or v > Variant.RAPIDO:
+		return
+	if not is_node_ready():
+		variant = v
+		return
+	_apply_variant_now(v)
+
+
+func _apply_variant_now(v: int) -> void:
+	if _variant_applied or v <= Variant.SOLDADO or v > Variant.RAPIDO:
+		return
+	_variant_applied = true
+	variant = v
+	var tint := Color.WHITE
+	var size_k := 1.0
+	var glow := NO_GLOW
+	match v:
+		Variant.PESADO:
+			max_health *= 2.4
+			speed *= 0.75
+			patrol_speed *= 0.75
+			knockback *= 0.3
+			fire_rate *= 1.35
+			pellets = 4
+			fan_degrees = 14.0
+			bullet_damage_mult = 0.8
+			can_flee = false
+			size_k = 1.18
+			tint = Color(0.55, 0.68, 0.95)
+			kill_points = 150
+		Variant.TIRADOR:
+			vision_range *= 1.7
+			vision_angle = maxf(vision_angle * 0.6, 10.0)
+			attack_range *= 1.6
+			fire_rate *= 2.2
+			reaction_time *= 1.5
+			spread_degrees *= 0.2
+			bullet_speed_mult = 1.9
+			bullet_damage_mult = 2.2
+			stop_to_shoot = true
+			has_laser = true
+			tint = Color(0.74, 0.84, 0.46)
+			kill_points = 130
+		Variant.RAPIDO:
+			speed *= 1.55
+			patrol_speed *= 1.3
+			acceleration *= 1.4
+			max_health *= 0.6
+			fire_rate *= 0.55
+			spread_degrees *= 1.5
+			attack_range *= 0.6
+			reaction_time *= 0.6
+			can_flee = false
+			size_k = 0.92
+			tint = Color(1.0, 0.5, 0.42)
+			glow = Color(1.0, 0.18, 0.08, 1.0)
+			kill_points = 120
+	health = max_health
+	_apply_variant_visuals(tint, size_k, glow)
+	if has_laser:
+		_build_laser()
+
+
+func _apply_variant_visuals(tint: Color, size_k: float, glow: Color) -> void:
+	icon_offset = 26.0 * size_k
+	if body_shape != null and size_k != 1.0:
+		body_shape.scale = Vector2.ONE * size_k
+	if anim == null:
+		return
+	if size_k != 1.0:
+		anim.scale *= size_k
+		if visuals != null:
+			if visuals.get("_sprite_home_scale") != null:
+				visuals.set("_sprite_home_scale", anim.scale)
+			var muzzle = visuals.get("muzzle_offset")
+			if muzzle is Vector2:
+				visuals.set("muzzle_offset", muzzle * size_k)
+	var mat := anim.material as ShaderMaterial
+	if mat == null:
+		anim.self_modulate = tint
+		return
+	mat = mat.duplicate() as ShaderMaterial
+	anim.material = mat
+	mat.set_shader_parameter("albedo_color", tint)
+	if glow.a > 0.0:
+		mat.set_shader_parameter("emission_enabled", true)
+		mat.set_shader_parameter("emission", glow)
+		mat.set_shader_parameter("emission_energy_multiplier", 0.35)
+
+
+func _build_laser() -> void:
+	if _laser != null:
+		return
+	_laser_glow = _make_laser_line("LaserGlow", true)
+	_laser = _make_laser_line("Laser", false)
+
+
+func _make_laser_line(line_name: String, additive: bool) -> Line2D:
+	var line := Line2D.new()
+	line.name = line_name
+	line.light_mask = 0
+	line.width = 1.2
+	line.z_index = 30
+	line.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	line.end_cap_mode = Line2D.LINE_CAP_ROUND
+	line.default_color = Color(1.0, 0.1, 0.1, 0.15)
+	if additive:
+		var mat := CanvasItemMaterial.new()
+		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		line.material = mat
+	line.points = PackedVector2Array([Vector2.ZERO, Vector2.ZERO])
+	add_child(line)
+	return line
+
+
 func _physics_process(delta: float) -> void:
 	if state == State.MUERTO or behavior == Behavior.INERTE:
 		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 		move_and_slide()
+		if state == State.MUERTO and velocity == Vector2.ZERO:
+			set_physics_process(false)
 		return
 
 	_shoot_timer = maxf(0.0, _shoot_timer - delta)
@@ -239,14 +353,12 @@ func _physics_process(delta: float) -> void:
 	_target = _pick_visible_target(delta)
 	var engaged := state == State.ATACAR or state == State.HUIR
 
-	# te vio un instante y te perdió: va a mirar donde estabas
 	_peak_awareness = maxf(_peak_awareness, awareness)
 	if awareness < 0.05:
 		if _peak_awareness > 0.6 and not engaged:
 			_investigate(_last_known_position)
 		_peak_awareness = 0.0
 
-	# sospecha: se queda quieto mirándote
 	if _target == null and _seen_now and awareness > 0.25 and not engaged:
 		_face_smooth(_last_known_position, delta)
 		_brake(delta)
@@ -265,6 +377,8 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 	_check_stuck(delta)
+	if _laser != null:
+		_update_laser(delta)
 
 
 func is_alive() -> bool:
@@ -277,8 +391,6 @@ func _set_state(new_state: int) -> void:
 	_stuck_timer = 0.0
 	_path_goal = NO_POINT
 
-
-# estados
 
 func _state_patrulla(delta: float) -> void:
 	if _target != null:
@@ -301,11 +413,18 @@ func _enter_attack() -> void:
 	var was_calm := state != State.ATACAR and state != State.HUIR
 	awareness = 1.0
 	_set_state(State.ATACAR)
-	# reacciona con un pequeño retraso
 	_shoot_timer = maxf(_shoot_timer, reaction_time * Settings.enemy_reaction_mult())
-	if was_calm and _target != null:
-		# grita para que los cercanos vengan
-		Global.make_noise(global_position, alert_radius, _target.global_position)
+	if has_laser:
+		_shoot_timer = maxf(_shoot_timer, LASER_LEAD)
+	if was_calm:
+		if not Global.boss_alive:
+			Global.register_detection()
+		if _target != null:
+			Global.make_noise(global_position, alert_radius, _target.global_position)
+
+
+func _aim_locked() -> bool:
+	return has_laser and _shoot_timer > 0.0 and _shoot_timer <= LASER_LOCK
 
 
 func _state_atacar(delta: float) -> void:
@@ -313,7 +432,8 @@ func _state_atacar(delta: float) -> void:
 		_investigate(_last_known_position)
 		return
 
-	_face(_target.global_position)
+	if not _aim_locked():
+		_face(_target.global_position)
 	var dist := global_position.distance_to(_target.global_position)
 
 	if behavior == Behavior.PERSEGUIR:
@@ -322,7 +442,6 @@ func _state_atacar(delta: float) -> void:
 		else:
 			_brake(delta)
 	elif behavior == Behavior.PATRULLA and not stop_to_shoot and route.is_empty():
-		# camina mientras dispara
 		_advance_on_line(delta)
 	else:
 		_brake(delta)
@@ -331,15 +450,15 @@ func _state_atacar(delta: float) -> void:
 	if puede_disparar and _shoot_timer <= 0.0:
 		_shoot()
 		_shoot_timer = fire_rate
+	elif has_laser and not puede_disparar:
+		_shoot_timer = maxf(_shoot_timer, LASER_LEAD)
 
 
-## va a ver de dónde vino el ruido
 func _state_investigar(delta: float) -> void:
 	if _target != null:
 		_enter_attack()
 		return
 
-	# la torreta solo gira
 	if behavior == Behavior.TORRETA:
 		_face_smooth(_investigate_pos, delta)
 		_brake(delta)
@@ -348,7 +467,6 @@ func _state_investigar(delta: float) -> void:
 		return
 
 	if _go_to(_investigate_pos, delta, speed):
-		# llegó: mira un rato antes de rendirse
 		global_rotation += 1.8 * delta
 		_search_timer -= delta
 		if _search_timer <= 0.0:
@@ -357,7 +475,6 @@ func _state_investigar(delta: float) -> void:
 		_set_state(State.VOLVER)
 
 
-## vuelve a su puesto
 func _state_volver(delta: float) -> void:
 	if _target != null:
 		_enter_attack()
@@ -373,7 +490,6 @@ func _state_volver(delta: float) -> void:
 		_set_state(State.PATRULLA)
 
 
-## huye; si lo arrinconan, pelea
 func _state_huir(delta: float) -> void:
 	var threat := _last_known_position
 	var player := _closest_player()
@@ -402,7 +518,6 @@ func _start_flee() -> void:
 	_flee_repick = 0.0
 
 
-## de varias direcciones, la que más lo aleja
 func _pick_flee_point(threat: Vector2) -> Vector2:
 	var best := global_position
 	var best_score := -INF
@@ -419,7 +534,15 @@ func _pick_flee_point(threat: Vector2) -> Vector2:
 	return best
 
 
-# pathfinding
+func alert_to(point: Vector2) -> void:
+	if state == State.MUERTO or state == State.ATACAR or state == State.HUIR:
+		return
+	if behavior == Behavior.INERTE:
+		return
+	_last_known_position = point
+	_investigate(point)
+	_search_timer = maxf(_search_timer, give_up_time * 1.5)
+
 
 func _get_level() -> Node:
 	if _level == null or not is_instance_valid(_level):
@@ -441,7 +564,6 @@ func _compute_path(point: Vector2) -> PackedVector2Array:
 	return PackedVector2Array([point])
 
 
-## sigue el camino hacia point, true cuando llega
 func _go_to(point: Vector2, delta: float, move_speed: float, face_move: bool = true) -> bool:
 	if global_position.distance_to(point) <= 10.0:
 		_brake(delta)
@@ -453,7 +575,6 @@ func _go_to(point: Vector2, delta: float, move_speed: float, face_move: bool = t
 		_path_index = 0
 		_path_goal = point
 		_repath_timer = 0.5
-		# si el primer punto quedó atrás, lo salta
 		if _path.size() > 1 and global_position.distance_to(_path[1]) < _path[0].distance_to(_path[1]):
 			_path_index = 1
 
@@ -471,9 +592,6 @@ func _go_to(point: Vector2, delta: float, move_speed: float, face_move: bool = t
 	return false
 
 
-# patrulla
-
-## dirección de la línea
 func _patrol_axis() -> Vector2:
 	return Vector2.RIGHT.rotated(deg_to_rad(patrol_angle_degrees))
 
@@ -482,14 +600,12 @@ func _patrol_end(sign_dir: float) -> Vector2:
 	return _home_position + _patrol_axis() * patrol_distance * sign_dir
 
 
-## punto de la línea más cercano
 func _closest_point_on_line() -> Vector2:
 	var axis := _patrol_axis()
 	var t: float = clampf((global_position - _home_position).dot(axis), -patrol_distance, patrol_distance)
 	return _home_position + axis * t
 
 
-## a dónde vuelve tras una alerta
 func _return_point() -> Vector2:
 	match behavior:
 		Behavior.PATRULLA:
@@ -542,7 +658,6 @@ func _turn_around() -> void:
 	velocity = Vector2.ZERO
 
 
-## patrulla por waypoints en ciclo
 func _do_route_patrol(delta: float) -> void:
 	if _wait_timer > 0.0:
 		_wait_timer -= delta
@@ -555,7 +670,6 @@ func _do_route_patrol(delta: float) -> void:
 		_wait_timer = patrol_wait
 
 
-## el perseguidor merodea cerca de su puesto
 func _do_wander(delta: float) -> void:
 	if _wait_timer > 0.0:
 		_wait_timer -= delta
@@ -577,7 +691,6 @@ func _do_wander(delta: float) -> void:
 		_wait_timer = randf_range(0.6, patrol_wait + 1.2)
 
 
-## si choca con una pared reacciona en vez de empujarla
 func _check_stuck(delta: float) -> void:
 	if _wait_timer > 0.0 or state == State.MUERTO:
 		_stuck_timer = 0.0
@@ -604,7 +717,6 @@ func _on_stuck() -> void:
 			else:
 				_wander_target = NO_POINT
 		State.HUIR:
-			# arrinconado: pelea
 			_cornered = true
 			if _target != null:
 				_enter_attack()
@@ -621,7 +733,6 @@ func _do_turret_sweep(delta: float) -> void:
 	_sweep_time += delta
 	var fase := sin(TAU * _sweep_time / turret_sweep_time)
 	var objetivo := _base_rotation + deg_to_rad(turret_sweep_degrees * 0.5) * fase
-	# lerp_angle para que vuelva suave al barrido
 	global_rotation = lerp_angle(global_rotation, objetivo, clampf(delta * 6.0, 0.0, 1.0))
 
 
@@ -640,8 +751,6 @@ func _face_smooth(point: Vector2, delta: float) -> void:
 		global_rotation = lerp_angle(global_rotation, wanted, clampf(delta * 10.0, 0.0, 1.0))
 
 
-# percepción
-
 func _closest_player() -> Node2D:
 	var best: Node2D = null
 	var best_dist := INF
@@ -656,7 +765,13 @@ func _closest_player() -> Node2D:
 	return best
 
 
-## devuelve al jugador solo si ya te detectó (awareness 1) o ya está peleando
+func _sight_range(who: Node) -> float:
+	var lv = who.get("light_visibility")
+	if lv == null:
+		return vision_range
+	return vision_range * clampf(float(lv), 0.05, 4.0)
+
+
 func _pick_visible_target(delta: float) -> Node2D:
 	if Global.health <= 0.0:
 		awareness = maxf(0.0, awareness - delta)
@@ -666,11 +781,13 @@ func _pick_visible_target(delta: float) -> Node2D:
 	var best: Node2D = null
 	var best_vis := 0.0
 	var best_dist := INF
+	var best_range := vision_range
 	for p in get_tree().get_nodes_in_group("player"):
 		var who := p as Node2D
 		if who == null:
 			continue
-		var vis := _visibility(who)
+		var reach := _sight_range(who)
+		var vis := _visibility(who, reach)
 		if vis <= 0.0:
 			continue
 		var d := global_position.distance_to(who.global_position)
@@ -678,6 +795,7 @@ func _pick_visible_target(delta: float) -> Node2D:
 			best_dist = d
 			best = who
 			best_vis = vis
+			best_range = reach
 
 	_seen_now = best != null
 	if best != null:
@@ -691,8 +809,7 @@ func _pick_visible_target(delta: float) -> Node2D:
 		return best
 
 	if best != null and Global.grace_time <= 0.0:
-		# cerca sube rápido; moverte o disparar te delata
-		var proximity := lerpf(0.35, 2.2, clampf(1.0 - best_dist / vision_range, 0.0, 1.0))
+		var proximity := lerpf(0.35, 2.2, clampf(1.0 - best_dist / maxf(best_range, 1.0), 0.0, 1.0))
 		var loudness = best.get("noise_level")
 		var noise := 1.0 if loudness == null else float(loudness)
 		var rate := (1.0 / Settings.diff("detect_time")) * proximity * noise * best_vis
@@ -704,11 +821,12 @@ func _pick_visible_target(delta: float) -> Node2D:
 	return null
 
 
-## qué tanto te ve: 1 en su cono, 0.55 pegado a su espalda, 0 si no
-func _visibility(who: Node2D) -> float:
+func _visibility(who: Node2D, reach: float = -1.0) -> float:
+	if reach < 0.0:
+		reach = _sight_range(who)
 	var to_target := who.global_position - global_position
 	var dist := to_target.length()
-	if dist > vision_range:
+	if dist > reach:
 		return 0.0
 
 	var factor := 1.0
@@ -716,18 +834,15 @@ func _visibility(who: Node2D) -> float:
 		var facing := Vector2.RIGHT.rotated(global_rotation)
 		var half := deg_to_rad(vision_angle * 0.5)
 		if absf(facing.angle_to(to_target)) > half:
-			# punto ciego: solo te nota si estás casi encima
 			if dist > 42.0:
 				return 0.0
 			factor = 0.55
 
-	# ¿hay pared en medio?
 	if _wall_between(who.global_position):
 		return 0.0
 	return factor
 
 
-## ¿está en su punto ciego?
 func _in_blind_spot(point: Vector2) -> bool:
 	if vision_angle >= 360.0:
 		return false
@@ -743,7 +858,6 @@ func _wall_between(point: Vector2) -> bool:
 	return vision_ray.is_colliding()
 
 
-## oye un disparo o un grito y va a investigar
 func _on_noise(origin: Vector2, radius: float, investigate_at: Vector2) -> void:
 	if state == State.MUERTO or state == State.ATACAR or state == State.HUIR:
 		return
@@ -752,7 +866,6 @@ func _on_noise(origin: Vector2, radius: float, investigate_at: Vector2) -> void:
 	var d := global_position.distance_to(origin)
 	if d > radius:
 		return
-	# las paredes amortiguan el sonido
 	if d > radius * 0.5 and _wall_between(origin):
 		return
 
@@ -766,35 +879,102 @@ func _investigate(point: Vector2) -> void:
 		_set_state(State.INVESTIGAR)
 
 
-# disparo
-
 func _shoot() -> void:
-	var scene_root := get_tree().current_scene
-	if scene_root == null:
-		return
-
-	if _bala_enemy == null:
-		_bala_enemy = load(BALA_ENEMY_PATH)
-	if _bala_enemy == null:
-		return
-	var bullet = _bala_enemy.instantiate()
-	scene_root.add_child(bullet)
-
-	var spread := deg_to_rad(randf_range(-spread_degrees, spread_degrees))
-	bullet.global_rotation = global_rotation + spread
-	bullet.global_position = global_position + Vector2(muzzle_distance, 0.0).rotated(global_rotation)
-	if "shooter" in bullet:
-		bullet.shooter = self
-	if "damage" in bullet:
-		bullet.damage *= Settings.enemy_damage_mult()
-
+	var count := maxi(1, pellets)
+	for i in range(count):
+		var offset := 0.0
+		if count > 1:
+			offset = lerpf(-fan_degrees * 0.5, fan_degrees * 0.5, float(i) / float(count - 1))
+		var angle := global_rotation + deg_to_rad(offset + randf_range(-spread_degrees, spread_degrees))
+		_spawn_bullet(angle, bullet_speed_mult, bullet_damage_mult, NO_GLOW, 1.0, NO_POINT, count > 1)
+	if has_laser:
+		_laser_flash = 0.12
 	if visuals != null:
 		visuals.fire()
 
 
-# daño y muerte
+func _spawn_bullet(angle: float, speed_mult: float = 1.0, damage_mult: float = 1.0, glow: Color = NO_GLOW, size: float = 1.0, origin: Vector2 = NO_POINT, as_pellet: bool = false) -> Node:
+	var scene_root := get_tree().current_scene
+	if scene_root == null:
+		return null
+	if _bala_enemy == null:
+		_bala_enemy = load(BALA_ENEMY_PATH)
+	if _bala_enemy == null:
+		return null
+	var bullet = _bala_enemy.instantiate()
+	if "shooter" in bullet:
+		bullet.shooter = self
+	if "pellet" in bullet:
+		bullet.pellet = as_pellet
+	if glow.a > 0.0 and "glow_color" in bullet:
+		bullet.glow_color = glow
+	if size != 1.0 and "size_mult" in bullet:
+		bullet.size_mult = size
+	if "speed" in bullet:
+		bullet.speed *= speed_mult
+	if "damage" in bullet:
+		bullet.damage *= damage_mult * Settings.enemy_damage_mult()
+	scene_root.add_child(bullet)
+	var start := origin
+	if start == NO_POINT:
+		start = global_position + Vector2(muzzle_distance, 0.0).rotated(angle)
+	bullet.global_rotation = angle
+	bullet.global_position = start
+	return bullet
 
-## la llama la bala al impactar
+
+func _update_laser(delta: float) -> void:
+	_laser_time += delta
+	_laser_flash = maxf(0.0, _laser_flash - delta)
+	if state == State.MUERTO or behavior == Behavior.INERTE:
+		_set_laser_visible(false)
+		return
+	_set_laser_visible(true)
+	var dir := Vector2.RIGHT.rotated(global_rotation)
+	var from := global_position + dir * muzzle_distance * 0.7
+	var reach := maxf(vision_range, 60.0)
+	var to := from + dir * reach
+	var query := PhysicsRayQueryParameters2D.create(from, to, 1)
+	var hit := get_world_2d().direct_space_state.intersect_ray(query)
+	if not hit.is_empty():
+		to = hit["position"]
+	var alpha := 0.22
+	var width := 1.0
+	var glow := 0.07
+	var col := Color(1.0, 0.1, 0.08)
+	if state == State.ATACAR and _shoot_timer <= LASER_LEAD:
+		var k := 1.0 - clampf(_shoot_timer / LASER_LEAD, 0.0, 1.0)
+		alpha = lerpf(0.45, 0.95, k)
+		width = lerpf(1.2, 2.2, k)
+		glow = lerpf(0.14, 0.4, k)
+		if _aim_locked():
+			var on := fmod(_laser_time * 28.0, 2.0) < 1.0
+			alpha = 1.0 if on else 0.55
+			glow = 0.55 if on else 0.25
+			width = 2.6
+			col = Color(1.0, 0.28, 0.22)
+	if _laser_flash > 0.0:
+		alpha = 1.0
+		glow = 0.8
+		width = 3.4
+		col = Color(1.0, 0.9, 0.8)
+	var pts := PackedVector2Array([to_local(from), to_local(to)])
+	_laser.points = pts
+	_laser.width = width
+	_laser.default_color = Color(col, alpha)
+	if _laser_glow != null:
+		_laser_glow.points = pts
+		_laser_glow.width = width * 3.2
+		_laser_glow.default_color = Color(col, glow)
+
+
+func _set_laser_visible(on: bool) -> void:
+	if _laser != null:
+		_laser.visible = on
+	if _laser_glow != null:
+		_laser_glow.visible = on
+
+
 func apply_bullet_hit(amount: float, from_direction: Vector2) -> void:
 	if state == State.MUERTO:
 		return
@@ -803,8 +983,6 @@ func apply_bullet_hit(amount: float, from_direction: Vector2) -> void:
 	take_damage(amount)
 
 
-## golpe de cuchillo: por el punto ciego y sin que te haya visto mata en silencio (puntos dobles),
-## si no es un golpe normal
 func melee_hit(amount: float, from_pos: Vector2) -> void:
 	if state == State.MUERTO:
 		return
@@ -822,7 +1000,6 @@ func melee_hit(amount: float, from_pos: Vector2) -> void:
 	_killed_by_melee = false
 
 
-## daño sin empuje
 func take_damage(amount: float) -> void:
 	if state == State.MUERTO:
 		return
@@ -834,13 +1011,11 @@ func take_damage(amount: float) -> void:
 		die()
 		return
 
-	# si le disparan sin haberte visto, va a donde estás
 	if state == State.PATRULLA or state == State.VOLVER:
 		var player := _closest_player()
 		if player != null:
 			_investigate(player.global_position)
 
-	# muy herido: huye (menos las torretas)
 	if can_flee and not _cornered and behavior != Behavior.TORRETA and state != State.HUIR:
 		if health <= max_health * flee_health_ratio:
 			_start_flee()
@@ -852,11 +1027,12 @@ func die() -> void:
 	_set_state(State.MUERTO)
 	velocity = Vector2.ZERO
 
-	# los puntos salen sobre el caído, más grandes con el combo
 	var silent := _stealth_kill
 	Global.last_kill_weapon = 2 if _killed_by_melee else Global.current_weapon
 	Global.last_kill_silent = silent
-	var earned := Global.add_kill(Global.KILL_POINTS * (2 if silent else 1))
+	if silent:
+		Global.register_stealth_kill()
+	var earned := Global.add_kill(kill_points * (2 if silent else 1))
 	var mult := Global.last_multiplier
 	var tint := UIStyle.BAR_FILL
 	if mult >= 10:
@@ -868,6 +1044,7 @@ func die() -> void:
 		FloatingText.spawn(get_tree().current_scene, global_position + Vector2(0, -18), "SILENCIOSO", UIStyle.AMMO, 11)
 	Global.enemy_killed.emit(global_position)
 
+	_set_laser_visible(false)
 	if visuals != null:
 		visuals.set_dead(true)
 	else:
@@ -877,7 +1054,24 @@ func die() -> void:
 	set_collision_mask_value(2, false)
 	if body_shape != null:
 		body_shape.set_deferred("disabled", true)
-	z_index = -1
+	_send_corpse_back()
+
+
+func _send_corpse_back() -> void:
+	z_index = 0
+	call_deferred("_reorder_corpse")
+
+
+func _reorder_corpse() -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	for child in parent.get_children():
+		if child == self:
+			return
+		if child.has_method("is_alive"):
+			parent.move_child(self, child.get_index())
+			return
 
 
 func _flash_hit() -> void:

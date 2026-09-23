@@ -12,6 +12,7 @@ static func spawn(parent: Node, world_pos: Vector2, text: String, color: Color, 
 	var label := Label.new()
 	label.text = text
 	label.z_index = 200
+	label.light_mask = 0
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_font_override("font", UIStyle.bold_font())

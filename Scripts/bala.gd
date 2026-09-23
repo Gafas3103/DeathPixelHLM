@@ -1,31 +1,26 @@
 extends Area2D
 
-## Bala del jugador (Bala.tscn) y del enemigo (BalaEnemy.tscn), con colisión real y efectos.
-## La del jugador vive en la capa 4 y detecta 1 y 3: atraviesa jugadores pero choca con paredes y enemigos.
-
 @export var speed: float = 900.0
 @export var damage: float = 25.0
 @export var lifetime: float = 2.0
 
-## puntos de la estela
 const TRAIL_POINTS := 11
-## color según el flow (0 normal, 3 berserk)
 const TIER_GLOWS: Array[Color] = [Color(1.0, 0.78, 0.22), Color(0.45, 0.9, 1.0), Color(1.0, 0.55, 0.15), Color(1.0, 0.15, 0.2)]
 
-## quién disparó, se ignora en las colisiones
 var shooter: Node = null
-## nivel de flow y si es perdigón; se asignan antes de añadirla a la escena
 var tier: int = 0
 var pellet: bool = false
+var glow_color: Color = Color(0.0, 0.0, 0.0, 0.0)
+var size_mult: float = 1.0
 
 var _spent: bool = false
 var _age: float = 0.0
 var _trail: Line2D = null
 var _glow_color: Color = Color(1.0, 0.75, 0.2)
 var _is_enemy_bullet: bool = false
+var _dir: Vector2 = Vector2.RIGHT
 
 
-## anillo de onda en el impacto
 class ImpactRing extends Node2D:
 	var radius: float = 2.0
 	var alpha: float = 1.0
@@ -36,6 +31,7 @@ class ImpactRing extends Node2D:
 		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 		material = mat
 		z_index = 50
+		light_mask = 0
 
 	func start() -> void:
 		var tween := create_tween()
@@ -50,7 +46,6 @@ class ImpactRing extends Node2D:
 	func _draw() -> void:
 		draw_arc(Vector2.ZERO, radius, 0.0, TAU, 28, Color(color, alpha), 3.0)
 		draw_circle(Vector2.ZERO, radius * 0.6, Color(color, alpha * 0.4))
-		# destello blanco al chocar
 		draw_circle(Vector2.ZERO, 7.0 * alpha, Color(1.0, 1.0, 0.9, alpha * alpha))
 
 
@@ -58,10 +53,21 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	area_entered.connect(_on_area_entered)
 
+	light_mask = 0
 	_is_enemy_bullet = (collision_layer & 16) != 0
 	_glow_color = Color(1.0, 0.32, 0.22) if _is_enemy_bullet else TIER_GLOWS[clampi(tier, 0, 3)]
+	if glow_color.a > 0.0:
+		_glow_color = Color(glow_color, 1.0)
 
-	# el brillo usa mezcla aditiva solo en este nodo
+	var sprite := get_node_or_null("Sprite2D") as CanvasItem
+	if sprite != null:
+		sprite.light_mask = 0
+		if glow_color.a > 0.0:
+			sprite.modulate = _glow_color.lerp(Color.WHITE, 0.35)
+
+	if size_mult != 1.0:
+		scale = Vector2.ONE * size_mult
+
 	var additive := CanvasItemMaterial.new()
 	additive.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	material = additive
@@ -80,8 +86,8 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 		return
 
-	# recto hacia donde apunta
-	position += transform.x * speed * delta
+	_dir = Vector2.RIGHT.rotated(global_rotation)
+	global_position += _dir * speed * delta
 
 	if _trail != null:
 		_trail.add_point(global_position)
@@ -90,23 +96,20 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 
-# efectos en vuelo
-
 func _build_trail() -> void:
 	_trail = Line2D.new()
-	_trail.top_level = true  # sus puntos son globales
-	_trail.width = (4.5 if pellet else 8.0) * (1.0 + 0.2 * float(tier))
+	_trail.top_level = true
+	_trail.light_mask = 0
+	_trail.width = (4.5 if pellet else 8.0) * (1.0 + 0.2 * float(tier)) * size_mult
 	_trail.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	_trail.end_cap_mode = Line2D.LINE_CAP_ROUND
 	_trail.z_index = -1
 
-	# fina en la cola, gruesa en la cabeza
 	var thickness := Curve.new()
 	thickness.add_point(Vector2(0.0, 0.0))
 	thickness.add_point(Vector2(1.0, 1.0))
 	_trail.width_curve = thickness
 
-	# transparente en la cola
 	var fade := Gradient.new()
 	fade.offsets = PackedFloat32Array([0.0, 1.0])
 	fade.colors = PackedColorArray([Color(_glow_color, 0.0), Color(_glow_color.lerp(Color.WHITE, 0.35), 0.85)])
@@ -126,7 +129,6 @@ func _draw() -> void:
 	draw_circle(Vector2.ZERO, 3.2 * k, Color(1.0, 0.97, 0.85, 0.98))
 
 
-## deja la estela en el mundo para que se desvanezca
 func _detach_trail() -> void:
 	if _trail == null or not is_instance_valid(_trail):
 		return
@@ -142,8 +144,6 @@ func _detach_trail() -> void:
 	tween.tween_callback(trail.queue_free)
 
 
-# impacto
-
 func _on_body_entered(body: Node2D) -> void:
 	_hit(body)
 
@@ -155,18 +155,18 @@ func _on_area_entered(area: Area2D) -> void:
 func _hit(target: Node) -> void:
 	if _spent or target == null:
 		return
-	if target == shooter or (shooter != null and target == shooter.get_parent()):
-		return
+	if shooter != null and is_instance_valid(shooter):
+		if target == shooter or target == shooter.get_parent():
+			return
 
 	_spent = true
 	set_deferred("monitoring", false)
+	_dir = Vector2.RIGHT.rotated(global_rotation)
 
-	# ¿enemigo/jugador o pared?
 	var hit_creature := target.has_method("apply_bullet_hit") or target.has_method("take_damage")
 
-	# apply_bullet_hit permite empujar al enemigo
 	if target.has_method("apply_bullet_hit"):
-		target.apply_bullet_hit(damage, transform.x)
+		target.apply_bullet_hit(damage, _dir)
 	elif target.has_method("take_damage"):
 		target.take_damage(damage)
 
@@ -180,23 +180,20 @@ func _spawn_impact(hit_creature: bool) -> void:
 	if scene_root == null:
 		return
 
-	# anillo
 	var ring := ImpactRing.new()
 	ring.color = Color(1.0, 0.35, 0.3) if hit_creature else _glow_color
 	scene_root.add_child(ring)
 	ring.global_position = global_position
 	ring.start()
 
-	# chispas
 	var spark_color := Color(1.0, 0.25, 0.2, 1.0) if hit_creature else Color(1.0, 0.86, 0.45, 1.0)
 	var sparks := _make_burst(scene_root, 22 if hit_creature else 14, 0.36, 150.0, 380.0, 2.4, 4.6, spark_color)
-	sparks.direction = -transform.x
+	sparks.direction = -_dir
 	sparks.spread = 60.0 if not hit_creature else 75.0
 
-	# humo (solo paredes)
 	if not hit_creature:
 		var smoke := _make_burst(scene_root, 5, 0.45, 15.0, 55.0, 3.0, 6.0, Color(0.75, 0.75, 0.78, 0.45))
-		smoke.direction = -transform.x
+		smoke.direction = -_dir
 		smoke.spread = 100.0
 		smoke.damping_min = 40.0
 		smoke.damping_max = 90.0
@@ -204,6 +201,7 @@ func _spawn_impact(hit_creature: bool) -> void:
 
 func _make_burst(scene_root: Node, count: int, life: float, vmin: float, vmax: float, smin: float, smax: float, color: Color) -> CPUParticles2D:
 	var p := CPUParticles2D.new()
+	p.light_mask = 0
 	p.emitting = false
 	p.one_shot = true
 	p.explosiveness = 1.0

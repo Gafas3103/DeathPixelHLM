@@ -10,6 +10,7 @@ var _taken: bool = false
 
 func _ready() -> void:
 	add_to_group("key_items")
+	light_mask = 0
 	collision_layer = 0
 	collision_mask = 2
 

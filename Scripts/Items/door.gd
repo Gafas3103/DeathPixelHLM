@@ -1,13 +1,9 @@
 extends StaticBody2D
 
-## Puerta con llave. Cerrada bloquea jugador, enemigos, balas y vista; con [E] se abre si tienes la llave.
-## Se coloca en un hueco de pared y se ajusta con "size".
-
 const UIStyle := preload("res://Scripts/UI/ui_style.gd")
 
 signal opened
 
-## tamaño del hueco en píxeles
 @export var size: Vector2 = Vector2(32, 16)
 @export var requires_key: bool = true
 
@@ -17,23 +13,21 @@ var _shape: CollisionShape2D
 var _zone: Area2D
 var _prompt: Label
 var _player_near: bool = false
-var _slide: float = 0.0  # 0 cerrada, 1 abierta
+var _slide: float = 0.0
 var _flash: float = 0.0
 
 
 func _ready() -> void:
 	add_to_group("doors")
-	collision_layer = 1  # capa Mundo, como las paredes
+	collision_layer = 1
 	collision_mask = 0
 
 	_shape = CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
-	# la hoja entra 2 px en cada pared para que no quede rendija
 	rect.size = size + (Vector2(4, 0) if size.x >= size.y else Vector2(0, 4))
 	_shape.shape = rect
 	add_child(_shape)
 
-	# zona de interacción, un poco más grande
 	_zone = Area2D.new()
 	_zone.collision_layer = 0
 	_zone.collision_mask = 2
@@ -55,6 +49,7 @@ func _ready() -> void:
 	_prompt.position = Vector2(-60, -size.y * 0.5 - 22)
 	_prompt.size = Vector2(120, 12)
 	_prompt.visible = false
+	_prompt.light_mask = 0
 	add_child(_prompt)
 
 
@@ -65,7 +60,6 @@ func _process(delta: float) -> void:
 
 	if is_open or not _player_near:
 		return
-	# cada frame por si recoges la llave ya estando cerca
 	_prompt.text = "[E] ABRIR" if (Global.has_key or not requires_key) else "REQUIERE LLAVE"
 	if Input.is_action_just_pressed("action"):
 		try_open()
@@ -98,7 +92,6 @@ func open() -> void:
 	opened.emit()
 
 
-## rectángulo de la puerta en el mundo (pathfinding)
 func get_solid_rect() -> Rect2:
 	return Rect2(global_position - size * 0.5, size)
 
@@ -125,7 +118,6 @@ func _draw() -> void:
 	if _flash > 0.0 and int(_flash * 20.0) % 2 == 0:
 		color = UIStyle.TEXT
 
-	# al abrirse la hoja se desliza y se encoge
 	var length := (size.x if horizontal else size.y) * (1.0 - _slide * 0.85)
 	var rect: Rect2
 	if horizontal:
@@ -135,7 +127,6 @@ func _draw() -> void:
 
 	draw_rect(rect, UIStyle.PANEL)
 	draw_rect(rect, color, false, 2.0)
-	# rayas de puerta blindada
 	if not is_open:
 		var step := 6.0
 		if horizontal:

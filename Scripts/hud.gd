@@ -1,15 +1,11 @@
 extends CanvasLayer
 
-## HUD: vidas y salud arriba a la izquierda, minimapa arriba a la derecha, objetivo al centro,
-## score y combo abajo a la izquierda, arma y munición abajo a la derecha.
-## Se construye por código y se actualiza con las señales de Global.
-
 const UIStyle := preload("res://Scripts/UI/ui_style.gd")
+const Story := preload("res://Scripts/story.gd")
+const RADIO_CPS := 48.0
+const RADIO_QUEUE_MAX := 8
 
 
-# controles propios
-
-## corazones en pixel-art, los perdidos se ven apagados
 class Hearts extends Control:
 	const UIStyle := preload("res://Scripts/UI/ui_style.gd")
 	const SHAPE: Array[String] = [
@@ -59,7 +55,6 @@ class Hearts extends Control:
 			draw_rect(Rect2(origin + Vector2(c.x * px, c.y * px), Vector2(px, px)), color)
 
 
-## silueta del arma equipada
 class WeaponIcon extends Control:
 	const UIStyle := preload("res://Scripts/UI/ui_style.gd")
 	var weapon: int = 0
@@ -98,10 +93,8 @@ class WeaponIcon extends Control:
 			draw_rect(Rect2(o + r.position * s, r.size * s), col)
 
 
-## radar de lo que hay alrededor del jugador
 class Minimap extends Control:
 	const UIStyle := preload("res://Scripts/UI/ui_style.gd")
-	## píxeles del mundo del centro al borde horizontal
 	const RANGE := 260.0
 
 	var _panel: StyleBoxFlat
@@ -126,7 +119,6 @@ class Minimap extends Control:
 		var center := size * 0.5
 		var pp := player.global_position
 
-		# paredes y muebles cercanos
 		var level := get_tree().get_first_node_in_group("level")
 		if level != null and "solid_rects" in level:
 			var limit := Vector2(RANGE + 16.0, (size.y * 0.5) / scale_f + 16.0)
@@ -136,25 +128,21 @@ class Minimap extends Control:
 					continue
 				draw_rect(Rect2(center + (r.position - pp) * scale_f, r.size * scale_f), Color(UIStyle.BAR_EMPTY, 0.85))
 
-		# puertas cerradas
 		for door in get_tree().get_nodes_in_group("doors"):
 			if door.is_open:
 				continue
 			var rel_door: Vector2 = door.global_position - pp
 			draw_rect(Rect2(center + rel_door * scale_f - door.size * scale_f * 0.5, door.size * scale_f), UIStyle.OBJECTIVE)
 
-		# salida (solo con la llave)
 		if Global.has_key:
 			for ex in get_tree().get_nodes_in_group("exit_zone"):
 				var p := _edge((ex.global_position - pp) * scale_f + center)
 				draw_rect(Rect2(p - Vector2(4, 4), Vector2(8, 8)), UIStyle.BAR_FILL)
 
-		# llave
 		for k in get_tree().get_nodes_in_group("key_items"):
 			var kp := _edge((k.global_position - pp) * scale_f + center)
 			draw_colored_polygon(PackedVector2Array([kp + Vector2(0, -5), kp + Vector2(5, 0), kp + Vector2(0, 5), kp + Vector2(-5, 0)]), UIStyle.OBJECTIVE)
 
-		# enemigos vivos
 		for e in get_tree().get_nodes_in_group("Enemies"):
 			if not e.has_method("is_alive") or not e.is_alive():
 				continue
@@ -163,7 +151,6 @@ class Minimap extends Control:
 			var ep := _edge(raw)
 			draw_circle(ep, 3.0, UIStyle.LIFE if inside else Color(UIStyle.LIFE, 0.45))
 
-		# jugador al centro, con una rayita hacia donde apunta
 		draw_circle(center, 4.5, UIStyle.BAR_FILL)
 		draw_line(center, center + Vector2.RIGHT.rotated(player.global_rotation) * 9.0, UIStyle.BAR_FILL, 2.0)
 
@@ -171,7 +158,6 @@ class Minimap extends Control:
 		return Vector2(clampf(p.x, 6.0, size.x - 6.0), clampf(p.y, 6.0, size.y - 6.0))
 
 
-## mirilla que sigue al mouse (el cursor real está oculto)
 class Crosshair extends Control:
 	const UIStyle := preload("res://Scripts/UI/ui_style.gd")
 	var pos: Vector2 = Vector2.ZERO
@@ -191,12 +177,12 @@ class Crosshair extends Control:
 		draw_circle(pos, 1.5 * zoom, c)
 
 
-## guía del objetivo: marcador si está en pantalla, si no una flecha en el borde con la distancia
 class Guide extends Control:
 	const UIStyle := preload("res://Scripts/UI/ui_style.gd")
 	var target: Node2D = null
 	var caption: String = ""
 	var color: Color = Color("#FFB000")
+	var top: float = 110.0
 	var _time: float = 0.0
 
 	func _init() -> void:
@@ -213,7 +199,6 @@ class Guide extends Control:
 		if player == null:
 			return
 
-		# posición en pantalla (la cámara ya está en la transformación del canvas)
 		var screen_pos: Vector2 = get_viewport().get_canvas_transform() * target.global_position
 		var meters := int(round(player.global_position.distance_to(target.global_position) / 16.0))
 		var text := "%s · %d m" % [caption, meters]
@@ -223,11 +208,9 @@ class Guide extends Control:
 		var dark := Color(0, 0, 0, 0.75)
 		var font := ThemeDB.fallback_font
 
-		# zona segura, lejos de las esquinas con vidas, minimapa y arma
-		var bounds := Rect2(Vector2(70, 110), size - Vector2(140, 250))
+		var bounds := Rect2(Vector2(70, top), size - Vector2(140, top + 140.0))
 
 		if bounds.has_point(screen_pos):
-			# visible: triángulo que rebota
 			var bob := sin(_time * 6.0) * 4.0
 			var tip := screen_pos + Vector2(0, -20 + bob)
 			var tri := PackedVector2Array([tip, tip + Vector2(-9, -14), tip + Vector2(9, -14)])
@@ -235,7 +218,6 @@ class Guide extends Control:
 			draw_polyline(PackedVector2Array([tri[0], tri[1], tri[2], tri[0]]), dark, 2.0)
 			_text(font, tip + Vector2(-90, -20), text, col, dark)
 		else:
-			# fuera de pantalla: flecha en el borde
 			var center := bounds.get_center()
 			var dir := (screen_pos - center).normalized()
 			var half := bounds.size * 0.5
@@ -251,24 +233,96 @@ class Guide extends Control:
 			])
 			draw_colored_polygon(pts, col)
 			draw_polyline(PackedVector2Array([pts[0], pts[1], pts[2], pts[3], pts[0]]), dark, 2.0)
-			# el texto va hacia adentro, junto a la flecha
 			var text_pos := pos - dir * 34.0 + Vector2(-90, 5)
 			_text(font, text_pos, text, col, dark)
 
 	func _text(font: Font, at: Vector2, text: String, col: Color, outline: Color) -> void:
-		# texto casi blanco con borde negro para que se lea sobre cualquier suelo
 		var bright := Color(col.lerp(Color.WHITE, 0.7), 1.0)
 		draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_CENTER, 180.0, 17, 8, Color(0, 0, 0, 0.95))
 		draw_string(font, at, text, HORIZONTAL_ALIGNMENT_CENTER, 180.0, 17, bright)
 
 
-# estado
+class BossBar extends Control:
+	const UIStyle := preload("res://Scripts/UI/ui_style.gd")
+	const MARKS: Array[float] = [0.66, 0.33]
+	var ratio: float = 1.0
+	var trail: float = 1.0
+	var phase: int = 0
+	var flash: float = 0.0
+	var _hold: float = 0.0
+	var _time: float = 0.0
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(560, 16)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func set_ratio(value: float) -> void:
+		value = clampf(value, 0.0, 1.0)
+		if value < ratio - 0.0001:
+			flash = maxf(flash, 0.18)
+			_hold = 0.35
+		ratio = value
+		if trail < ratio:
+			trail = ratio
+
+	func _process(delta: float) -> void:
+		_time += delta
+		flash = maxf(0.0, flash - delta)
+		if _hold > 0.0:
+			_hold -= delta
+		elif trail > ratio:
+			trail = move_toward(trail, ratio, delta * 0.45)
+		queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		draw_rect(r, Color(0, 0, 0, 0.8))
+		var inner := r.grow(-2.0)
+		draw_rect(inner, UIStyle.BAR_EMPTY)
+		draw_rect(Rect2(inner.position, Vector2(inner.size.x * trail, inner.size.y)), Color(1.0, 0.86, 0.7, 0.85))
+		var k := clampf(flash / 0.18, 0.0, 1.0)
+		var fill := UIStyle.LIFE.lerp(Color.WHITE, k * 0.65)
+		if phase >= 2:
+			fill = fill.lerp(Color(1.0, 0.05, 0.2), 0.25 + 0.25 * sin(_time * 9.0))
+		var filled := Rect2(inner.position, Vector2(inner.size.x * ratio, inner.size.y))
+		draw_rect(filled, fill)
+		draw_rect(Rect2(filled.position, Vector2(filled.size.x, 3.0)), Color(1, 1, 1, 0.2))
+		for mark in MARKS:
+			var x := inner.position.x + inner.size.x * mark
+			var col := UIStyle.TEXT if ratio > mark else Color(UIStyle.TEXT, 0.3)
+			draw_line(Vector2(x, r.position.y - 3.0), Vector2(x, r.end.y + 3.0), Color(0, 0, 0, 0.9), 4.0)
+			draw_line(Vector2(x, r.position.y - 3.0), Vector2(x, r.end.y + 3.0), col, 2.0)
+		draw_rect(r, UIStyle.LIFE.darkened(0.35), false, 2.0)
+
+
+class RadioIcon extends Control:
+	var color: Color = Color.WHITE
+	var active: bool = false
+	var _time: float = 0.0
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(20, 14)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _process(delta: float) -> void:
+		_time += delta
+		queue_redraw()
+
+	func _draw() -> void:
+		for i in range(4):
+			var h := 4.0 + float(i) * 3.0
+			var a := 0.9
+			if active:
+				a = 0.35 + 0.65 * clampf(0.5 + 0.5 * sin(_time * 16.0 - float(i) * 1.4), 0.0, 1.0)
+			draw_rect(Rect2(float(i) * 5.0, size.y - h, 3.0, h), Color(color, a))
+
 
 var _root: Control
 var _hearts: Hearts
 var _health_bar: ProgressBar
 var _minimap: Minimap
 var _objective_big: Label
+var _objective_big_pending: bool = false
 var _objective_small: Label
 var _score_label: Label
 var _combo_mult: Label
@@ -303,10 +357,44 @@ var _flash_tween: Tween = null
 var _last_health: float = -1.0
 var _age: float = 0.0
 var _toast_tween: Tween = null
+var _in_tutorial: bool = false
+var _ammo_empty: bool = false
+
+var _boss_box: VBoxContainer
+var _boss_bar: BossBar
+var _boss_phase_label: Label
+var _boss_last_phase: int = 0
+var _boss_tween: Tween = null
+
+var _alarm_box: PanelContainer
+var _alarm_title: Label
+var _alarm_time: Label
+var _alarm_caption: Label
+var _alarm_left: float = 0.0
+
+var _radio: PanelContainer
+var _radio_style: StyleBoxFlat
+var _radio_icon: RadioIcon
+var _radio_speaker: Label
+var _radio_text: Label
+var _radio_queue: Array = []
+var _radio_state: int = 0
+var _radio_timer: float = 0.0
+var _radio_chars: float = 0.0
+
+var _timer_label: Label
+var _timer_shown: int = -1
+
+var _flash_box: HBoxContainer
+var _flash_label: Label
+var _flash_state: Label
+var _flash_known: bool = false
+var _flash_refresh: float = 0.0
 
 
 func _ready() -> void:
 	layer = 5
+	_in_tutorial = GameManager.in_tutorial or get_tree().get_first_node_in_group("tutorial") != null
 
 	_root = Control.new()
 	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -314,7 +402,6 @@ func _ready() -> void:
 	_root.theme = UIStyle.theme()
 	add_child(_root)
 
-	# destello al recibir daño (rojo) o curarse (verde), debajo del resto de la interfaz
 	_screen_flash = ColorRect.new()
 	_screen_flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_screen_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -330,11 +417,14 @@ func _ready() -> void:
 	_build_weapon()
 	_build_toast()
 	_build_controls_bar()
+	_build_boss_bar()
+	_build_alarm()
+	_build_radio()
+	_build_flashlight()
 	_build_guide()
 	_build_crosshair()
 	_build_game_over()
 
-	# señales de Global
 	Global.health_changed.connect(_on_health_changed)
 	Global.ammo_changed.connect(_on_ammo_changed)
 	Global.weapon_changed.connect(_on_weapon_changed)
@@ -346,8 +436,15 @@ func _ready() -> void:
 	Global.message.connect(_show_toast)
 	Global.player_died.connect(_on_player_died)
 	Global.player_respawned.connect(_on_player_respawned)
+	Global.radio_message.connect(_on_radio_message)
+	Global.boss_spawned.connect(_on_boss_spawned)
+	Global.boss_health_changed.connect(_on_boss_health_changed)
+	Global.boss_defeated.connect(_on_boss_defeated)
+	Global.alarm_changed.connect(_on_alarm_changed)
+	Global.flashlight_changed.connect(_on_flashlight_changed)
 
-	# valores iniciales
+	call_deferred("_sync_level_state")
+
 	_on_health_changed(Global.health)
 	_on_weapon_changed(Global.current_weapon)
 	_on_ammo_changed(Global.ammo)
@@ -363,6 +460,8 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_age += delta
+	if _objective_big_pending and not get_tree().paused:
+		_show_objective_big()
 	_crosshair.pos = get_viewport().get_mouse_position()
 	_crosshair.zoom = Settings.crosshair_scale
 	_crosshair.visible = not _game_over.visible
@@ -370,19 +469,23 @@ func _process(delta: float) -> void:
 
 	_minimap.visible = Settings.show_minimap
 	_reload_label.visible = Global.reloading
+	_guide.top = 160.0 if (_boss_box.visible or _alarm_box.visible) else 110.0
 	_update_guide()
+	_update_radio(delta)
+	_update_alarm_fx()
+	_update_timer()
+	_update_flashlight(delta)
 
-	# rojo con el cargador vacío
 	var empty := Global.ammo <= 0 and not Global.is_melee_weapon()
-	_ammo_label.add_theme_color_override("font_color", UIStyle.LIFE if empty else UIStyle.AMMO)
+	if empty != _ammo_empty:
+		_ammo_empty = empty
+		_ammo_label.add_theme_color_override("font_color", UIStyle.LIFE if empty else UIStyle.AMMO)
 
 	_update_stealth()
 	_update_flow(delta)
 	if _controls_bar != null and _controls_bar.visible:
 		_controls_bar.modulate.a = clampf((16.0 - _age) / 2.0, 0.0, 1.0)
 
-
-# construcción
 
 func _place(c: Control, ax: float, ay: float, left: float, top: float, right: float, bottom: float) -> void:
 	c.anchor_left = ax
@@ -426,7 +529,6 @@ func _build_minimap() -> void:
 
 
 func _build_objective() -> void:
-	# grande al centro al cambiar, luego queda el pequeño
 	_objective_big = UIStyle.label("", 52, UIStyle.OBJECTIVE, true)
 	_objective_big.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_objective_big.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -455,13 +557,17 @@ func _build_bottom_left() -> void:
 	_outlined(_score_label)
 	stats.add_child(_score_label)
 
+	_timer_label = UIStyle.label("", 14, UIStyle.TEXT_DIM, true)
+	_outlined(_timer_label, 3)
+	_timer_label.visible = false
+	stats.add_child(_timer_label)
+
 	var combo_box := VBoxContainer.new()
 	combo_box.add_theme_constant_override("separation", 4)
 	combo_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_place(combo_box, 0.0, 1.0, 300, -128, 620, -24)
 	_root.add_child(combo_box)
 
-	# encima de la barra: COMBO y multiplicador, que rebota al subir
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 10)
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -481,7 +587,6 @@ func _build_bottom_left() -> void:
 	_combo_bar.value = 0.0
 	combo_box.add_child(_combo_bar)
 
-	# debajo: el flow activo y el daño extra
 	_flow_label = UIStyle.label("", 15, UIStyle.TEXT_DIM, true)
 	_outlined(_flow_label)
 	combo_box.add_child(_flow_label)
@@ -499,7 +604,6 @@ func _build_weapon() -> void:
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(column)
 
-	# ranuras de armas
 	var slots := HBoxContainer.new()
 	slots.add_theme_constant_override("separation", 12)
 	slots.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -547,7 +651,6 @@ func _build_weapon() -> void:
 	column.add_child(_melee_hint)
 
 
-## indicador de sigilo bajo el minimapa
 func _build_stealth() -> void:
 	var box := HBoxContainer.new()
 	box.add_theme_constant_override("separation", 8)
@@ -571,7 +674,6 @@ func _build_stealth() -> void:
 	box.add_child(_stealth_label)
 
 
-## viñeta que se enciende con frenesí y berserk
 func _build_vignette() -> void:
 	var gradient := Gradient.new()
 	gradient.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
@@ -593,7 +695,6 @@ func _build_vignette() -> void:
 	_vignette.modulate = Color(1, 1, 1, 0)
 	_root.add_child(_vignette)
 
-	# aviso al subir de nivel de flow
 	_flow_banner = UIStyle.label("", 60, UIStyle.OBJECTIVE, true)
 	_flow_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_flow_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -619,7 +720,6 @@ func _build_guide() -> void:
 	_root.add_child(_guide)
 
 
-## qué mostrar en la guía: llave, puerta cerrada, salida
 func _update_guide() -> void:
 	var target: Node2D = null
 	var caption := ""
@@ -627,15 +727,18 @@ func _update_guide() -> void:
 
 	var tutorial_target := _nearest_to_player("tutorial_target")
 	if tutorial_target != null:
-		# en el tutorial apunta al objetivo del paso
 		target = tutorial_target
 		caption = String(tutorial_target.get_meta("caption", "AQUÍ"))
 	elif Global.health > 0.0:
-		if not Global.has_key:
+		var boss: Variant = Global.boss_node
+		if Global.boss_alive and is_instance_valid(boss) and boss is Node2D:
+			target = boss as Node2D
+			caption = "CONTRATISTA"
+			col = UIStyle.LIFE
+		elif not Global.has_key:
 			target = _nearest_to_player("key_items")
 			caption = "LLAVE"
 			if target == null:
-				# la llave aparece al caer el último enemigo; mientras, guía a los que quedan
 				target = _nearest_to_player("Enemies")
 				caption = "ENEMIGO"
 				col = UIStyle.LIFE
@@ -675,19 +778,353 @@ func _nearest_to_player(group_name: String, only_closed: bool = false) -> Node2D
 	return best
 
 
-## recordatorio de controles los primeros segundos
 func _build_controls_bar() -> void:
 	_controls_bar = UIStyle.label("", 14, UIStyle.TEXT_DIM, true)
 	_controls_bar.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_controls_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_outlined(_controls_bar, 4)
-	_place(_controls_bar, 0.5, 0.0, -520, 78, 520, 98)
+	_place(_controls_bar, 0.0, 0.0, 24, 78, 1024, 98)
 	_root.add_child(_controls_bar)
 	_controls_bar.text = "%s MOVER · CLIC DISPARAR (MANTENER = RÁFAGA) · 1 2 3 ARMAS · %s RECARGAR · %s SIGILO · %s CUCHILLO · %s INTERACTUAR" % [
 		"WASD", Settings.key_name("reload"), Settings.key_name("sneak"), Settings.key_name("melee"), Settings.key_name("action")]
-	# el tutorial ya tiene su tarjeta
 	if get_tree().get_first_node_in_group("tutorial") != null:
 		_controls_bar.visible = false
+
+
+func _build_boss_bar() -> void:
+	_boss_box = VBoxContainer.new()
+	_boss_box.add_theme_constant_override("separation", 3)
+	_boss_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_place(_boss_box, 0.5, 0.0, -280, 104, 280, 150)
+	_root.add_child(_boss_box)
+
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 10)
+	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_boss_box.add_child(head)
+
+	var boss_name := UIStyle.label(Story.BOSS_NAME, 18, UIStyle.LIFE, true)
+	boss_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_outlined(boss_name, 5)
+	head.add_child(boss_name)
+
+	var title := UIStyle.label(Story.BOSS_TITLE, 12, UIStyle.TEXT_DIM, true)
+	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	title.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_outlined(title, 3)
+	head.add_child(title)
+
+	_boss_phase_label = UIStyle.label("FASE 1/3", 12, UIStyle.TEXT, true)
+	_boss_phase_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_boss_phase_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	_outlined(_boss_phase_label, 3)
+	head.add_child(_boss_phase_label)
+
+	_boss_bar = BossBar.new()
+	_boss_box.add_child(_boss_bar)
+	_boss_box.visible = false
+
+
+func _build_alarm() -> void:
+	_alarm_box = PanelContainer.new()
+	_alarm_box.add_theme_stylebox_override("panel", UIStyle.box(Color(UIStyle.BG, 0.8), UIStyle.LIFE, 2, 6, 16, 2))
+	_alarm_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_place(_alarm_box, 0.5, 0.0, -200, 104, 200, 150)
+	_root.add_child(_alarm_box)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_alarm_box.add_child(row)
+
+	_alarm_title = UIStyle.label("ALARMA", 16, UIStyle.LIFE, true)
+	_alarm_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_outlined(_alarm_title, 4)
+	row.add_child(_alarm_title)
+
+	_alarm_time = UIStyle.label("00:00", 28, UIStyle.TEXT, true)
+	_alarm_time.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_outlined(_alarm_time, 5)
+	row.add_child(_alarm_time)
+
+	_alarm_caption = UIStyle.label("REFUERZOS EN CAMINO", 12, UIStyle.TEXT_DIM, true)
+	_alarm_caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_outlined(_alarm_caption, 3)
+	row.add_child(_alarm_caption)
+	_alarm_box.visible = false
+
+
+func _build_radio() -> void:
+	_radio = PanelContainer.new()
+	_radio_style = UIStyle.box(Color(UIStyle.BG, 0.86), UIStyle.AMMO, 0, 6, 14, 10)
+	_radio_style.border_width_left = 4
+	_radio.add_theme_stylebox_override("panel", _radio_style)
+	_radio.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_place(_radio, 0.0, 1.0, 24, -230, 484, -156)
+	_root.add_child(_radio)
+
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 4)
+	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_radio.add_child(column)
+
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 8)
+	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(head)
+
+	_radio_icon = RadioIcon.new()
+	_radio_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(_radio_icon)
+
+	_radio_speaker = UIStyle.label("", 13, UIStyle.AMMO, true)
+	_outlined(_radio_speaker, 3)
+	head.add_child(_radio_speaker)
+
+	var tag := UIStyle.label("RADIO", 11, UIStyle.TEXT_DIM, true)
+	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	tag.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(tag)
+
+	_radio_text = UIStyle.label("", 16, UIStyle.TEXT)
+	_radio_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_radio_text.custom_minimum_size = Vector2(426, 0)
+	_outlined(_radio_text, 3)
+	column.add_child(_radio_text)
+	_radio.visible = false
+
+
+func _build_flashlight() -> void:
+	_flash_box = HBoxContainer.new()
+	_flash_box.add_theme_constant_override("separation", 10)
+	_flash_box.alignment = BoxContainer.ALIGNMENT_END
+	_flash_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_place(_flash_box, 1.0, 1.0, -420, -196, -24, -172)
+	_root.add_child(_flash_box)
+
+	_flash_state = UIStyle.label("", 12, UIStyle.BAR_FILL, true)
+	_flash_state.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_outlined(_flash_state, 3)
+	_flash_box.add_child(_flash_state)
+
+	_flash_label = UIStyle.label("", 13, UIStyle.OBJECTIVE, true)
+	_flash_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_outlined(_flash_label, 3)
+	_flash_box.add_child(_flash_label)
+	_flash_box.visible = false
+
+
+func _sync_level_state() -> void:
+	if Global.boss_alive and is_instance_valid(Global.boss_node):
+		_on_boss_spawned(Global.boss_node)
+	_on_alarm_changed(Global.alarm_active, _alarm_left)
+
+
+func _clock(seconds: float) -> String:
+	var s := maxi(0, int(seconds))
+	return "%02d:%02d" % [floori(float(s) / 60.0), s % 60]
+
+
+func _on_radio_message(speaker: String, text: String) -> void:
+	if text.strip_edges() == "":
+		return
+	_radio_queue.append([speaker, text])
+	while _radio_queue.size() > RADIO_QUEUE_MAX:
+		_radio_queue.pop_front()
+	if _radio_state == 0 or _radio_state == 3:
+		_next_radio()
+
+
+func _next_radio() -> void:
+	if _radio_queue.is_empty():
+		_radio_state = 3
+		_radio_icon.active = false
+		return
+	var item: Array = _radio_queue.pop_front()
+	var speaker := String(item[0])
+	var col := Story.speaker_color(speaker)
+	_radio_speaker.text = speaker
+	_radio_speaker.add_theme_color_override("font_color", col)
+	_radio_style.border_color = col
+	_radio_icon.color = col
+	_radio_icon.active = true
+	_radio_text.text = String(item[1])
+	_radio_text.visible_characters = 0
+	_radio_chars = 0.0
+	_radio_state = 1
+	_radio.visible = true
+	_radio.modulate.a = 1.0
+
+
+func _update_radio(delta: float) -> void:
+	match _radio_state:
+		1:
+			var total := _radio_text.text.length()
+			_radio_chars += delta * RADIO_CPS * minf(1.0 + 0.5 * float(_radio_queue.size()), 2.5)
+			if _radio_chars >= float(total):
+				_radio_text.visible_characters = -1
+				_radio_icon.active = false
+				_radio_state = 2
+				_radio_timer = 1.3 + float(total) * 0.035
+				if not _radio_queue.is_empty():
+					_radio_timer *= 0.6
+			else:
+				_radio_text.visible_characters = int(_radio_chars)
+		2:
+			_radio_timer -= delta
+			if _radio_timer <= 0.0:
+				_next_radio()
+		3:
+			_radio.modulate.a = maxf(0.0, _radio.modulate.a - delta * 2.5)
+			if _radio.modulate.a <= 0.0:
+				_radio.visible = false
+				_radio_state = 0
+
+
+func _on_boss_spawned(boss: Node) -> void:
+	var ratio := 1.0
+	if boss != null and is_instance_valid(boss):
+		var max_hp: Variant = boss.get("max_health")
+		var hp: Variant = boss.get("health")
+		if max_hp != null and hp != null and float(max_hp) > 0.0 and float(hp) > 0.0:
+			ratio = clampf(float(hp) / float(max_hp), 0.0, 1.0)
+	_boss_last_phase = 0
+	_radio_queue.clear()
+	if _radio_state == 1 or _radio_state == 2:
+		var was_typing := _radio_state == 1
+		_radio_text.visible_characters = -1
+		_radio_icon.active = false
+		_radio_state = 2
+		_radio_timer = 0.5 if was_typing else minf(_radio_timer, 0.5)
+	_boss_bar.ratio = ratio
+	_boss_bar.trail = ratio
+	_boss_bar.phase = 0
+	_boss_phase_label.text = "FASE 1/3"
+	_boss_phase_label.add_theme_color_override("font_color", UIStyle.TEXT)
+	_alarm_box.visible = false
+	_boss_box.visible = true
+	if _boss_tween != null and _boss_tween.is_valid():
+		_boss_tween.kill()
+	_boss_box.modulate.a = 0.0
+	_boss_tween = create_tween()
+	_boss_tween.tween_property(_boss_box, "modulate:a", 1.0, 0.5)
+	_pulse_screen(Color(0.85, 0.02, 0.06, 0.32), 0.9)
+
+
+func _on_boss_health_changed(current: float, maximum: float, phase: int) -> void:
+	if not _boss_box.visible:
+		if current <= 0.0:
+			return
+		_on_boss_spawned(null)
+	_boss_bar.set_ratio(current / maxf(maximum, 1.0))
+	_boss_bar.phase = phase
+	_boss_phase_label.text = "FASE %d/3" % (clampi(phase, 0, 2) + 1)
+	if phase > _boss_last_phase:
+		_boss_bar.flash = 0.5
+		_boss_phase_label.add_theme_color_override("font_color", UIStyle.LIFE)
+		_pulse_screen(Color(1.0, 0.1, 0.1, 0.26), 0.6)
+	_boss_last_phase = phase
+
+
+func _on_boss_defeated() -> void:
+	if not _boss_box.visible:
+		return
+	_boss_bar.set_ratio(0.0)
+	_boss_phase_label.text = "DERROTADO"
+	_boss_phase_label.add_theme_color_override("font_color", UIStyle.OBJECTIVE)
+	if _boss_tween != null and _boss_tween.is_valid():
+		_boss_tween.kill()
+	_boss_box.modulate.a = 1.0
+	_boss_tween = create_tween()
+	_boss_tween.tween_interval(1.8)
+	_boss_tween.tween_property(_boss_box, "modulate:a", 0.0, 0.6)
+	_boss_tween.tween_callback(_boss_box.hide)
+	_pulse_screen(Color(1.0, 0.9, 0.7, 0.3), 0.9)
+
+
+func _on_alarm_changed(active: bool, time_left: float) -> void:
+	_alarm_left = time_left
+	if not active or _boss_box.visible:
+		_alarm_box.visible = false
+		return
+	_alarm_box.visible = true
+	var clock := _clock(ceilf(time_left))
+	if _alarm_time.text != clock:
+		_alarm_time.text = clock
+	var caption := "REFUERZOS EN CAMINO" if time_left > 0.0 else "¡LLEGAN LOS PESADOS!"
+	if _alarm_caption.text != caption:
+		_alarm_caption.text = caption
+
+
+func _update_alarm_fx() -> void:
+	if not _alarm_box.visible:
+		return
+	var urgent := _alarm_left < 15.0
+	var p := 0.5 + 0.5 * sin(_age * (11.0 if urgent else 5.0))
+	_alarm_title.modulate.a = 0.5 + 0.5 * p
+	if urgent:
+		_alarm_time.modulate = Color(1.0, 0.45 + 0.55 * p, 0.45 + 0.55 * p)
+	else:
+		_alarm_time.modulate = Color.WHITE
+
+
+func _update_timer() -> void:
+	if _in_tutorial or GameManager.current_index < 0:
+		_timer_label.visible = false
+		return
+	_timer_label.visible = true
+	var secs := int(Global.level_time)
+	if secs == _timer_shown:
+		return
+	_timer_shown = secs
+	var par := float(GameManager.level_data(GameManager.current_index).get("par_time", 0.0))
+	var text := "TIEMPO " + _clock(Global.level_time)
+	if par > 0.0:
+		text += "  ·  PAR " + _clock(par)
+	_timer_label.text = text
+	var over := par > 0.0 and Global.level_time > par
+	_timer_label.add_theme_color_override("font_color", UIStyle.LIFE if over else UIStyle.TEXT_DIM)
+
+
+func _on_flashlight_changed(_on: bool) -> void:
+	if not _in_tutorial:
+		_flash_known = true
+	_flash_refresh = 0.0
+
+
+func _update_flashlight(delta: float) -> void:
+	_flash_refresh -= delta
+	if not _flash_known and not _in_tutorial and (Global.lights_out or Global.flashlight_on):
+		_flash_known = true
+		_flash_refresh = 0.0
+	if not _flash_known and not _in_tutorial and _flash_refresh <= 0.0:
+		_flash_refresh = 0.5
+		var lighting := get_tree().get_first_node_in_group("level_lighting")
+		if lighting != null and lighting.has_method("has_flashlight") and lighting.has_flashlight():
+			_flash_known = true
+			_flash_refresh = 0.0
+	_flash_box.visible = _flash_known
+	if not _flash_known or _flash_refresh > 0.0:
+		return
+	_flash_refresh = 0.2
+	var on := Global.flashlight_on
+	_flash_label.text = "LINTERNA [%s] · %s" % [Settings.key_name("flashlight"), "ENCENDIDA" if on else "APAGADA"]
+	_flash_label.add_theme_color_override("font_color", UIStyle.OBJECTIVE if on else UIStyle.TEXT_DIM)
+	var state_text := ""
+	var state_color := UIStyle.BAR_FILL
+	if Global.lights_out:
+		var player := get_tree().get_first_node_in_group("player")
+		var vis: Variant = player.get("light_visibility") if player != null else null
+		if vis != null:
+			if float(vis) < 0.99:
+				state_text = "EN LA OSCURIDAD"
+			else:
+				state_text = "VISIBLE"
+				state_color = UIStyle.OBJECTIVE
+	_flash_state.text = state_text
+	_flash_state.add_theme_color_override("font_color", state_color)
 
 
 func _build_crosshair() -> void:
@@ -732,11 +1169,8 @@ func _build_game_over() -> void:
 	box.add_child(menu)
 
 
-# reacciones a Global
-
 func _on_health_changed(new_health: float) -> void:
 	_health_bar.value = new_health / Global.max_health * 100.0
-	# solo destella con cambios reales, no al cargar el nivel
 	if _age > 0.6 and _last_health >= 0.0:
 		if new_health < _last_health - 0.5:
 			_pulse_screen(Color(1.0, 0.08, 0.12, 0.34), 0.4)
@@ -794,7 +1228,6 @@ func _on_combo_changed(multiplier: int, time_fraction: float) -> void:
 	_last_mult = multiplier
 	_combo_mult.text = "X%d" % multiplier
 
-	# el color sube con el combo
 	var tint := UIStyle.TEXT
 	if multiplier >= 10:
 		tint = UIStyle.LIFE
@@ -804,7 +1237,6 @@ func _on_combo_changed(multiplier: int, time_fraction: float) -> void:
 		tint = UIStyle.BAR_FILL
 	_combo_mult.add_theme_color_override("font_color", tint)
 
-	# rebota al subir
 	if multiplier > 1:
 		if _mult_tween != null and _mult_tween.is_valid():
 			_mult_tween.kill()
@@ -820,7 +1252,15 @@ func _on_objective_changed(text: String) -> void:
 	var full := "OBJETIVO: " + text
 	_objective_small.text = full
 	_objective_big.text = full
+	if get_tree().paused:
+		_objective_big_pending = true
+		_objective_big.modulate.a = 0.0
+		return
+	_show_objective_big()
 
+
+func _show_objective_big() -> void:
+	_objective_big_pending = false
 	if _objective_tween != null and _objective_tween.is_valid():
 		_objective_tween.kill()
 	_objective_big.modulate.a = 1.0
@@ -841,7 +1281,6 @@ func _show_toast(text: String) -> void:
 
 func _on_player_died() -> void:
 	_game_over.visible = true
-	# quita el aviso grande para no tapar el mensaje
 	if _objective_tween != null and _objective_tween.is_valid():
 		_objective_tween.kill()
 	_objective_big.modulate.a = 0.0
@@ -852,7 +1291,6 @@ func _on_player_died() -> void:
 		if retry != null:
 			retry.text = "REAPARECER  [R]"
 	else:
-		# última vida: se pierde todo el avance
 		_hearts.set_lives(0)
 		_game_over_prompt.text = "¡SIN VIDAS!\nPierdes tu puntaje y empiezas desde el NIVEL 1.\nPresiona [R] para reiniciar"
 		if retry != null:
@@ -864,13 +1302,11 @@ func _on_player_respawned() -> void:
 	_apply_mouse_mode()
 
 
-## qué tan cerca está algún enemigo de detectarte
 func _update_stealth() -> void:
 	var highest := 0.0
 	for e in get_tree().get_nodes_in_group("Enemies"):
 		if e.has_method("is_alive") and e.is_alive():
 			var aw := float(e.get("awareness"))
-			# un enemigo en combate cuenta como detección total aunque haya perdido de vista al jugador
 			var st := int(e.get("state"))
 			if st == 1 or st == 5:
 				aw = 1.0
@@ -894,7 +1330,6 @@ func _update_stealth() -> void:
 	_stealth_label.add_theme_color_override("font_color", col)
 
 
-## modo flow: etiqueta, viñeta y aviso al subir de nivel
 func _update_flow(_delta: float) -> void:
 	var tier := Global.flow_tier()
 	var tint := UIStyle.TEXT_DIM
@@ -909,7 +1344,6 @@ func _update_flow(_delta: float) -> void:
 		_flow_label.text = "DAÑO ×%.2f" % Global.damage_mult() if Global.combo > 1 else ""
 	_flow_label.add_theme_color_override("font_color", tint)
 
-	# la viñeta aparece en Frenesí y late en Berserk
 	var strength: float = [0.0, 0.0, 0.32, 0.6][tier]
 	var pulse := 0.85 + 0.15 * sin(Time.get_ticks_msec() * (0.014 if tier >= 3 else 0.007))
 	_vignette.modulate = Color(tint, strength * pulse)
@@ -933,7 +1367,6 @@ func _show_flow_banner(tier: int, tint: Color) -> void:
 	_flow_banner_tween.tween_property(_flow_banner, "modulate:a", 0.0, 0.4)
 
 
-## ratón confinado a la ventana; en partida además se oculta (la mirilla la dibuja el HUD)
 func _apply_mouse_mode() -> void:
 	if _game_over.visible or get_tree().paused:
 		Input.set_mouse_mode(Input.MOUSE_MODE_CONFINED)
@@ -942,13 +1375,11 @@ func _apply_mouse_mode() -> void:
 
 
 func _notification(what: int) -> void:
-	# al volver a la ventana se recupera la captura
 	if (what == NOTIFICATION_APPLICATION_FOCUS_IN or what == NOTIFICATION_WM_WINDOW_FOCUS_IN) and is_node_ready():
 		_apply_mouse_mode()
 
 
 func _input(event: InputEvent) -> void:
-	# con la pantalla de muerte, R o Enter/Espacio reaparecen
 	if not _game_over.visible:
 		return
 	var key_event := event as InputEventKey
@@ -965,5 +1396,4 @@ func _retry() -> void:
 		_game_over.visible = false
 		_apply_mouse_mode()
 	else:
-		# sin vidas extra reinicia el nivel desde el principio
 		Global.reset_game()

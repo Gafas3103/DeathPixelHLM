@@ -22,7 +22,11 @@ const REBINDABLE := {
 	"melee": "MELEE RÁPIDO (CUCHILLO)",
 	"sneak": "SIGILO (CAMINAR LENTO)",
 	"weapon_next": "CAMBIAR ARMA",
+	"flashlight": "LINTERNA",
 }
+
+const LIGHTING_QUALITIES: Array[String] = ["BAJA", "MEDIA", "ALTA"]
+const DEFAULT_LIGHTING_QUALITY := 2
 
 # gráficos
 var fullscreen: bool = true
@@ -31,6 +35,7 @@ var vsync: bool = true
 var fps_index: int = 0
 var brightness: float = 1.0
 var show_fps: bool = false
+var lighting_quality: int = DEFAULT_LIGHTING_QUALITY
 
 # audio (0.0 a 1.0)
 var master_volume: float = 0.8
@@ -77,6 +82,7 @@ func save_settings() -> void:
 	cfg.set_value("graphics", "fps_index", fps_index)
 	cfg.set_value("graphics", "brightness", brightness)
 	cfg.set_value("graphics", "show_fps", show_fps)
+	cfg.set_value("graphics", "lighting_quality", lighting_quality)
 	cfg.set_value("audio", "master", master_volume)
 	cfg.set_value("audio", "music", music_volume)
 	cfg.set_value("audio", "sfx", sfx_volume)
@@ -99,6 +105,7 @@ func load_settings() -> void:
 	fps_index = clampi(int(cfg.get_value("graphics", "fps_index", fps_index)), 0, FPS_LIMITS.size() - 1)
 	brightness = clampf(float(cfg.get_value("graphics", "brightness", brightness)), 0.5, 1.5)
 	show_fps = bool(cfg.get_value("graphics", "show_fps", show_fps))
+	lighting_quality = clampi(int(cfg.get_value("graphics", "lighting_quality", lighting_quality)), 0, LIGHTING_QUALITIES.size() - 1)
 	master_volume = clampf(float(cfg.get_value("audio", "master", master_volume)), 0.0, 1.0)
 	music_volume = clampf(float(cfg.get_value("audio", "music", music_volume)), 0.0, 1.0)
 	sfx_volume = clampf(float(cfg.get_value("audio", "sfx", sfx_volume)), 0.0, 1.0)
@@ -243,6 +250,11 @@ func set_show_fps(value: bool) -> void:
 	_commit()
 
 
+func set_lighting_quality(value: int) -> void:
+	lighting_quality = clampi(value, 0, LIGHTING_QUALITIES.size() - 1)
+	_commit()
+
+
 func set_master_volume(value: float) -> void:
 	master_volume = value
 	apply_audio()
@@ -311,6 +323,7 @@ func reset_defaults() -> void:
 	fps_index = 0
 	brightness = 1.0
 	show_fps = false
+	lighting_quality = DEFAULT_LIGHTING_QUALITY
 	master_volume = 0.8
 	music_volume = 0.7
 	sfx_volume = 0.8

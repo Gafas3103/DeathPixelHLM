@@ -20,6 +20,7 @@ var _icon: Sprite2D = null
 
 func _ready() -> void:
 	add_to_group("notes")
+	light_mask = 0
 	collision_layer = 0
 	collision_mask = 2
 
@@ -31,8 +32,10 @@ func _ready() -> void:
 		_icon = Sprite2D.new()
 		_icon.texture = load(ICON_PATH)
 		_icon.scale = Vector2(0.3, 0.3)
+		_icon.light_mask = 0
 		add_child(_icon)
 
+	prompt.light_mask = 0
 	prompt.text = "[E] LEER NOTA"
 	prompt.add_theme_font_size_override("font_size", 8)
 	prompt.add_theme_color_override("font_color", UIStyle.OBJECTIVE)
