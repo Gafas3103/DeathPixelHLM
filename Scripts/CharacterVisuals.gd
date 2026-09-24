@@ -1,8 +1,112 @@
 extends Node2D
 
-## Parte visual del personaje (hijo del CharacterBody2D): pose de disparo, retroceso, fogonazo y
-## sprite derecho volteado según la mira. No toca la física ni el apuntado.
+## Parte visual del personaje (hijo del CharacterBody2D): pose de disparo, retroceso, fogonazo,
+## sprite derecho volteado según la mira, y el arma equipada dibujada en la mano (solo jugador).
+## No toca la física ni el apuntado.
 ## Uso: visuals.fire() al disparar, visuals.is_shooting(), visuals.set_dead(true).
+
+## Silueta del arma que el jugador tiene equipada, dibujada por código (sin sprites propios).
+## Se agrega junto al cuerpo y gira con la mira; cambia sola al cambiar de arma (Global.weapon_changed).
+class WeaponIcon extends Node2D:
+	const BARREL := Color(0.16, 0.16, 0.19)
+	const BARREL_DARK := Color(0.08, 0.08, 0.1)
+	const BARREL_LIGHT := Color(0.34, 0.34, 0.38)
+	const OUTLINE := Color(0.04, 0.04, 0.05)
+	const GRIP := Color(0.36, 0.25, 0.13)
+	const GRIP_DARK := Color(0.22, 0.15, 0.07)
+	const METAL := Color(0.58, 0.59, 0.62)
+	const BLADE := Color(0.86, 0.88, 0.92)
+	const BLADE_EDGE := Color(0.98, 0.99, 1.0)
+
+	## 0 rifle, 1 escopeta, 2 cuchillo (mismo orden que weapons.gd)
+	var kind: int = 0
+
+	func _init() -> void:
+		z_index = 5
+
+	func _draw() -> void:
+		match kind:
+			0:
+				_draw_rifle()
+			1:
+				_draw_shotgun()
+			2:
+				_draw_knife()
+
+	## polígono relleno con contorno fino, para dar sensación de solidez
+	func _draw_shape(points: PackedVector2Array, fill: Color, outline_w: float = 1.0) -> void:
+		draw_colored_polygon(points, fill)
+		var closed := points.duplicate()
+		closed.append(points[0])
+		draw_polyline(closed, OUTLINE, outline_w, true)
+
+	func _draw_rect(rect: Rect2, fill: Color, outline_w: float = 1.0) -> void:
+		var pts := PackedVector2Array([
+			rect.position, Vector2(rect.end.x, rect.position.y),
+			rect.end, Vector2(rect.position.x, rect.end.y),
+		])
+		_draw_shape(pts, fill, outline_w)
+
+	func _draw_rifle() -> void:
+		# culata angulada
+		var stock := PackedVector2Array([
+			Vector2(-11.0, -1.5), Vector2(-2.0, -3.0), Vector2(-2.0, 3.0),
+			Vector2(-11.0, 2.5), Vector2(-13.0, 4.5), Vector2(-13.0, 1.0),
+		])
+		_draw_shape(stock, GRIP)
+		# empuñadura angulada
+		var grip := PackedVector2Array([
+			Vector2(-3.5, 1.5), Vector2(0.5, 1.5), Vector2(-1.0, 8.0), Vector2(-4.5, 8.0),
+		])
+		_draw_shape(grip, GRIP_DARK)
+		# receiver
+		_draw_rect(Rect2(-2.0, -3.2, 14.0, 6.4), BARREL)
+		# cañón
+		_draw_rect(Rect2(12.0, -1.3, 15.0, 2.6), BARREL_DARK)
+		_draw_rect(Rect2(25.0, -1.6, 3.0, 3.2), Color(0.02, 0.02, 0.02))
+		# cargador curvo
+		var mag := PackedVector2Array([
+			Vector2(1.0, 3.0), Vector2(4.5, 3.0), Vector2(6.5, 11.0),
+			Vector2(3.5, 11.5), Vector2(0.5, 4.0),
+		])
+		_draw_shape(mag, BARREL_DARK)
+		# mira trasera y delantera
+		_draw_rect(Rect2(2.0, -5.4, 2.2, 2.4), METAL)
+		_draw_rect(Rect2(21.0, -4.6, 1.6, 3.4), METAL)
+		# brillo superior
+		draw_line(Vector2(-1.0, -3.0), Vector2(11.0, -3.0), BARREL_LIGHT, 1.0)
+
+	func _draw_shotgun() -> void:
+		var stock := PackedVector2Array([
+			Vector2(-10.0, -2.0), Vector2(-1.0, -3.5), Vector2(-1.0, 4.5),
+			Vector2(-9.0, 3.5), Vector2(-11.5, 5.5), Vector2(-11.5, 1.5),
+		])
+		_draw_shape(stock, GRIP)
+		_draw_rect(Rect2(-1.0, -3.6, 8.0, 7.2), BARREL_DARK)
+		# cañón único, más grueso
+		_draw_rect(Rect2(6.0, -2.3, 20.0, 4.6), BARREL)
+		# guardamano tipo bomba
+		_draw_rect(Rect2(9.0, -3.0, 7.0, 6.0), GRIP_DARK)
+		for i in range(3):
+			var x := 10.0 + i * 2.0
+			draw_line(Vector2(x, -2.6), Vector2(x, 2.6), OUTLINE, 0.8)
+		_draw_rect(Rect2(25.0, -2.6, 2.5, 5.2), Color(0.02, 0.02, 0.02))
+		draw_line(Vector2(6.0, -2.0), Vector2(24.0, -2.0), BARREL_LIGHT, 1.0)
+
+	func _draw_knife() -> void:
+		var handle := PackedVector2Array([
+			Vector2(-7.0, -1.2), Vector2(-1.5, -2.0), Vector2(0.0, 0.0),
+			Vector2(-1.5, 2.0), Vector2(-7.0, 1.2),
+		])
+		_draw_shape(handle, GRIP)
+		_draw_rect(Rect2(-0.5, -3.0, 1.6, 6.0), METAL)
+		var blade := PackedVector2Array([
+			Vector2(1.0, -1.4), Vector2(11.0, -1.0), Vector2(16.5, 0.0),
+			Vector2(11.0, 1.0), Vector2(1.0, 1.4),
+		])
+		_draw_shape(blade, BLADE)
+		draw_line(Vector2(2.0, -0.9), Vector2(15.0, -0.2), BLADE_EDGE, 0.8)
+
 
 @export_group("Sprite")
 ## si está vacío busca el AnimatedSprite2D del personaje
@@ -32,6 +136,11 @@ extends Node2D
 ## cuánto dura la pose de disparo
 @export var shoot_hold_time: float = 0.13
 
+@export_group("Arma equipada")
+## dibuja el arma actual en la mano; solo tiene efecto si el dueño está en el grupo "player"
+@export var show_weapon_icon: bool = true
+@export var weapon_offset: Vector2 = Vector2(11.0, 3.0)
+
 var _body: Node2D = null
 var _sprite: AnimatedSprite2D = null
 var _sprite_home := Vector2.ZERO
@@ -42,6 +151,8 @@ var _recoil_tween: Tween = null
 var _hit_tween: Tween = null
 var _shoot_timer: float = 0.0
 var _dead: bool = false
+var _weapon_icon: WeaponIcon = null
+var _checked_owner: bool = false
 
 
 func _ready() -> void:
@@ -54,6 +165,11 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if not _checked_owner:
+		_checked_owner = true
+		if show_weapon_icon and _body != null and _body.is_in_group("player"):
+			_build_weapon_icon()
+
 	if _shoot_timer > 0.0:
 		_shoot_timer = max(0.0, _shoot_timer - delta)
 
@@ -133,6 +249,8 @@ func set_dead(value: bool) -> void:
 	if _dead == value:
 		return
 	_dead = value
+	if _weapon_icon != null:
+		_weapon_icon.visible = not _dead
 	if _dead:
 		_shoot_timer = 0.0
 		if _recoil_tween != null and _recoil_tween.is_valid():
@@ -141,6 +259,20 @@ func set_dead(value: bool) -> void:
 			_sprite.position = _sprite_home
 			_sprite.scale = _sprite_home_scale
 			AnimNames.play(_sprite, AnimNames.DEAD)
+
+
+func _build_weapon_icon() -> void:
+	_weapon_icon = WeaponIcon.new()
+	_weapon_icon.position = weapon_offset
+	_weapon_icon.kind = Global.current_weapon
+	add_child(_weapon_icon)
+	Global.weapon_changed.connect(_on_weapon_changed)
+
+
+func _on_weapon_changed(index: int) -> void:
+	if _weapon_icon != null:
+		_weapon_icon.kind = index
+		_weapon_icon.queue_redraw()
 
 
 # interno
