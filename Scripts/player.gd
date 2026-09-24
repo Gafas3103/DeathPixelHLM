@@ -20,10 +20,16 @@ const TIER_COLORS: Array[Color] = [Color("#FFB000"), Color("#22D3EE"), Color("#F
 ## distancia del centro a la que nace la bala
 @export var muzzle_distance: float = 34.0
 
+@export_group("Apuntado (ADS)")
+@export_range(0.4, 1.0, 0.02) var aim_zoom: float = 0.72
+@export var aim_zoom_speed: float = 6.0
+@export_range(0.3, 1.0, 0.05) var aim_speed_mult: float = 0.82
+
 var start_position: Vector2
 ## qué tan visible eres (1 normal, menos = más sigiloso); lo leen los enemigos
 var noise_level: float = 1.0
 var is_sneaking: bool = false
+var is_aiming: bool = false
 
 var _cooldown: float = 0.0
 var _reload_left: float = 0.0
@@ -49,6 +55,7 @@ var light_visibility: float:
 		return 0.5
 
 @onready var camera: Camera2D = get_node_or_null("Camera2D")
+var _camera_home_zoom: Vector2 = Vector2.ONE
 @onready var visuals = get_node_or_null("Visuals")
 
 
@@ -90,6 +97,7 @@ func _ready():
 
 	if has_node("Camera2D"):
 		$Camera2D.make_current()
+		_camera_home_zoom = camera.zoom
 
 
 ## sacude la cámara, se apaga sola
@@ -103,6 +111,8 @@ func _process(delta: float):
 	if camera != null:
 		_shake = move_toward(_shake, 0.0, delta * 22.0)
 		camera.offset = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * _shake
+		var target_zoom := _camera_home_zoom * (aim_zoom if is_aiming else 1.0)
+		camera.zoom = camera.zoom.lerp(target_zoom, clampf(delta * aim_zoom_speed, 0.0, 1.0))
 
 	# parpadea mientras eres invulnerable (en el tutorial no)
 	modulate.a = (0.45 + 0.35 * sin(_time * 28.0)) if (Global.invuln_time > 0.0 and Global.invuln_time < 100.0) else 1.0
@@ -157,7 +167,8 @@ func _physics_process(delta):
 	# 4 direcciones; Shift = sigilo; el flow te hace más rápido
 	var direction = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	is_sneaking = Input.is_action_pressed("sneak")
-	var move_speed := speed * Global.speed_mult() * (0.5 if is_sneaking else 1.0)
+	is_aiming = Input.is_action_pressed("aim") and not Global.is_melee_weapon() and Global.health > 0
+	var move_speed := speed * Global.speed_mult() * (0.5 if is_sneaking else 1.0) * (aim_speed_mult if is_aiming else 1.0)
 	velocity = direction * move_speed
 	if _lunge_time > 0.0:
 		velocity += _lunge_dir * 240.0
@@ -291,7 +302,8 @@ func _fire_weapon(def: Dictionary) -> void:
 		bullet.tier = tier
 		bullet.pellet = pellets > 1
 		get_tree().current_scene.add_child(bullet)
-		var spread := deg_to_rad(randf_range(-float(def["spread"]), float(def["spread"])))
+		var spread_deg := float(def["spread"]) * (float(def.get("ads_mult", 1.0)) if is_aiming else 1.0)
+		var spread := deg_to_rad(randf_range(-spread_deg, spread_deg))
 		bullet.global_rotation = angle + spread
 		bullet.global_position = spawn
 

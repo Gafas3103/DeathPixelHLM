@@ -78,7 +78,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _refresh_help() -> void:
-	_help.text = "MOVER: WASD · APUNTAR: MOUSE · DISPARAR: CLIC IZQ. (MANTENER = RÁFAGA)\nARMAS: 1 RIFLE · 2 ESCOPETA · 3 CUCHILLO · %s CAMBIAR · %s RECARGAR\nCUCHILLO RÁPIDO: %s / CLIC DER. · SIGILO (CAMINAR DESPACIO): %s · INTERACTUAR: %s · LINTERNA: %s" % [
+	_help.text = "MOVER: WASD · MIRAR: MOUSE · DISPARAR: CLIC IZQ. (MANTENER = RÁFAGA) · APUNTAR (ZOOM): CLIC DER.\nARMAS: 1 RIFLE · 2 ESCOPETA · 3 CUCHILLO · %s CAMBIAR · %s RECARGAR\nCUCHILLO RÁPIDO: %s · SIGILO (CAMINAR DESPACIO): %s · INTERACTUAR: %s · LINTERNA: %s" % [
 		Settings.key_name("weapon_next"), Settings.key_name("reload"), Settings.key_name("melee"), Settings.key_name("sneak"), Settings.key_name("action"), Settings.key_name("flashlight")]
 
 
